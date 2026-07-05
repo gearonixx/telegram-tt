@@ -22,8 +22,10 @@ import useFlag from '../../../hooks/useFlag';
 import { useIsIntersecting } from '../../../hooks/useIntersectionObserver';
 import useLastCallback from '../../../hooks/useLastCallback';
 import useLayoutEffectWithPrevDeps from '../../../hooks/useLayoutEffectWithPrevDeps';
+import useMediaBitmapCanvas from '../../../hooks/useMediaBitmapCanvas';
 import useMediaTransition from '../../../hooks/useMediaTransition';
 import useMediaWithLoadProgress from '../../../hooks/useMediaWithLoadProgress';
+import useOffscreenMediaRelease from '../../../hooks/useOffscreenMediaRelease';
 import usePrevious from '../../../hooks/usePrevious';
 import usePreviousDeprecated from '../../../hooks/usePreviousDeprecated';
 import useShowTransition from '../../../hooks/useShowTransition';
@@ -113,7 +115,7 @@ const Photo = <T,>({
   const prevMediaData = usePrevious(mediaData);
   const fullMediaData = localBlobUrl || mediaData;
 
-  const { ref: fullMediaRef, shouldRender: shouldRenderFullMedia } = useMediaTransition<HTMLImageElement>({
+  const { ref: fullMediaRef, shouldRender: shouldRenderFullMedia } = useMediaTransition<HTMLCanvasElement>({
     hasMediaData: Boolean(fullMediaData),
     withShouldRender: true,
   });
@@ -125,6 +127,10 @@ const Photo = <T,>({
   useMediaTransition({ ref: thumbRef, hasMediaData: !noThumb });
   const blurredBackgroundRef = useBlurredMediaThumbRef(photo, !withBlurredBackground);
   const thumbDataUri = getMediaThumbUri(photo);
+
+  const isOffscreenReleased = useOffscreenMediaRelease(
+    isIntersecting, Boolean(fullMediaData && thumbDataUri) && size === 'inline',
+  );
 
   const { updateContentSettings, openAgeVerificationModal } = getActions();
   const [isNsfwModalOpen, openNsfwModal, closeNsfwModal] = useFlag();
@@ -251,6 +257,18 @@ const Photo = <T,>({
     isNestedMedia,
   });
 
+  const photoSizes = !isPaidPreview ? photo.sizes : undefined;
+  const inlineSize = photoSizes?.find((photoSize) => photoSize.type === 'x') || photoSizes?.[photoSizes.length - 1];
+  useMediaBitmapCanvas(fullMediaRef, {
+    url: fullMediaData || prevMediaData,
+    thumbUri: thumbDataUri,
+    width,
+    height,
+    mediaWidth: isPaidPreview ? photo.width : inlineSize?.width,
+    mediaHeight: isPaidPreview ? photo.height : inlineSize?.height,
+    isReleased: isOffscreenReleased,
+  });
+
   const componentClassName = buildClassName(
     'media-inner',
     !isUploading && !nonInteractive && 'interactive',
@@ -282,13 +300,10 @@ const Photo = <T,>({
         <canvas ref={blurredBackgroundRef} className="thumbnail blurred-bg" />
       )}
       {shouldRenderFullMedia && (
-        <img
+        <canvas
           ref={fullMediaRef}
-          src={fullMediaData || prevMediaData}
           className={buildClassName('full-media', withBlurredBackground && 'with-blurred-bg')}
-          alt=""
           style={forcedWidth ? `width: ${forcedWidth}px` : undefined}
-          draggable={!isProtected}
         />
       )}
       {withThumb && (

@@ -65,7 +65,7 @@ export const MEDIA_PROGRESSIVE_CACHE_DISABLED = false;
 export const MEDIA_PROGRESSIVE_CACHE_NAME = 'tt-media-progressive';
 export const MEDIA_CACHE_MAX_BYTES = 512 * 1024; // 512 KB
 // LRU byte budget for the in-memory media cache in `mediaLoader`; `0` disables eviction
-export const MEDIA_MEMORY_CACHE_MAX_BYTES = 64 * 1024 * 1024; // 64 MB
+export const MEDIA_MEMORY_CACHE_MAX_BYTES = 32 * 1024 * 1024; // 32 MB
 export const CUSTOM_BG_CACHE_NAME = 'tt-custom-bg';
 export const LANG_CACHE_NAME = 'tt-lang-packs-v52';
 export const ASSET_CACHE_NAME = 'tt-assets';
