@@ -9,7 +9,7 @@ import {
 
 import {
   DEBUG, MEDIA_CACHE_DISABLED, MEDIA_CACHE_NAME,
-  MEDIA_CACHE_NAME_AVATARS,
+  MEDIA_CACHE_NAME_AVATARS, MEDIA_MEMORY_CACHE_MAX_BYTES,
 } from '../config';
 import { callApi, cancelApiProgress } from '../api/gramjs';
 import {
@@ -31,7 +31,11 @@ const PROGRESSIVE_URL_PREFIX = './progressive/';
 const DOWNLOAD_URL_PREFIX = './download/';
 const MAX_MEDIA_RETRIES = 5;
 
+// Iteration order doubles as LRU order: reads re-insert the entry at the end
 const memoryCache = new Map<string, ApiPreparedMedia>();
+const memoryCacheEntryBytes = new Map<string, number>();
+let memoryCacheBytes = 0;
+
 const fetchPromises = new Map<string, Promise<ApiPreparedMedia | undefined>>();
 const progressCallbacks = new Map<string, Map<string, ApiOnProgress>>();
 const cancellableCallbacks = new Map<string, ApiOnProgress>();
@@ -108,7 +112,58 @@ export function fetch<T extends ApiMediaFormat>(
 }
 
 export function getFromMemory(url: string) {
-  return memoryCache.get(url) as ApiPreparedMedia;
+  const media = memoryCache.get(url);
+
+  // Refresh LRU position
+  if (media !== undefined) {
+    memoryCache.delete(url);
+    memoryCache.set(url, media);
+  }
+
+  return media as ApiPreparedMedia;
+}
+
+function putInMemory(url: string, media: ApiPreparedMedia, bytes: number) {
+  deleteFromMemory(url);
+
+  memoryCache.set(url, media);
+  memoryCacheEntryBytes.set(url, bytes);
+  memoryCacheBytes += bytes;
+
+  if (!MEDIA_MEMORY_CACHE_MAX_BYTES) {
+    return;
+  }
+
+  while (memoryCacheBytes > MEDIA_MEMORY_CACHE_MAX_BYTES && memoryCache.size > 1) {
+    deleteFromMemory(memoryCache.keys().next().value!);
+  }
+}
+
+function deleteFromMemory(url: string) {
+  const media = memoryCache.get(url);
+  if (media === undefined) {
+    return;
+  }
+
+  if (typeof media === 'string' && media.startsWith('blob:')) {
+    URL.revokeObjectURL(media);
+  }
+
+  memoryCacheBytes -= memoryCacheEntryBytes.get(url) || 0;
+  memoryCacheEntryBytes.delete(url);
+  memoryCache.delete(url);
+}
+
+function calcMediaBytes(media: ApiParsedMedia) {
+  if (media instanceof Blob) {
+    return media.size;
+  }
+
+  if (typeof media === 'string') {
+    return media.length * 2;
+  }
+
+  return media.byteLength;
 }
 
 export function cancelProgress(progressCallback: ApiOnProgress) {
@@ -161,7 +216,7 @@ async function fetchFromCacheOrRemote(
 
       const prepared = prepareMedia(media);
 
-      memoryCache.set(url, prepared);
+      putInMemory(url, prepared, calcMediaBytes(media));
 
       return prepared;
     }
@@ -184,22 +239,23 @@ async function fetchFromCacheOrRemote(
   }
 
   const { mimeType } = remote;
-  let prepared = prepareMedia(remote.dataBlob);
+  let parsed: ApiParsedMedia = remote.dataBlob;
+  let prepared = prepareMedia(parsed);
 
   if (mimeType === 'audio/ogg' && !IS_OPUS_SUPPORTED) {
     const blob = await fetchBlob(prepared);
     URL.revokeObjectURL(prepared);
-    const media = await oggToWav(blob);
-    prepared = prepareMedia(media);
+    parsed = await oggToWav(blob);
+    prepared = prepareMedia(parsed);
   }
 
-  memoryCache.set(url, prepared);
+  putInMemory(url, prepared, calcMediaBytes(parsed));
 
   return prepared;
 }
 
 export async function unload(url: string) {
-  memoryCache.delete(url);
+  deleteFromMemory(url);
   if (!MEDIA_CACHE_DISABLED) {
     const cacheName = url.startsWith('avatar') ? MEDIA_CACHE_NAME_AVATARS : MEDIA_CACHE_NAME;
     await cacheApi.remove(cacheName, url);
@@ -212,7 +268,7 @@ function makeOnProgress(url: string) {
       callback(progress);
       if (callback.isCanceled) {
         onProgress.isCanceled = true;
-        memoryCache.delete(url);
+        deleteFromMemory(url);
       }
     });
   };
