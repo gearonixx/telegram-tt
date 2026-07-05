@@ -269,7 +269,7 @@ ARGB→RGBA conversion run as WASM SIMD.
 
 | Subsystem | Memory shape | Verdict |
 |---|---|---|
-| 4 × media workers (`launchMediaWorkers`, hosting `rlottie.worker` + `offscreen-canvas.worker`) | 16 MB → **4 MB** WASM floor each (commit 7) + worker JS runtime; spawned eagerly at first `RLottie.ts` import | Lazy spawn is the remaining win (§6.4) |
+| 4 × media workers (`launchMediaWorkers`, hosting `rlottie.worker` + `offscreen-canvas.worker`) | 16 MB → **4 MB** WASM floor each (commit 7) + worker JS runtime | **Now spawned individually on first use** — the login screen runs one media worker (the QR plane animation) instead of four; the rest join on demand as instances round-robin across indices |
 | GramJS worker (`src/api/gramjs`) | `localDb` grow-only Records of TL class instances (H6); sender/auth maps bounded per-DC (≤ 5) | Out of scope (MTProto semantics); upstream LRU proposal in §4 rank 6 |
 | fastText (`src/lib/fasttextweb`) | 1.1 MB wasm (937 KB embedded language model), memory **defined in-binary, fixed min = max = 16 MB** — not growable, not glue-patchable without relocating data segments | Only spawns when the native `LanguageDetector` API is missing (i.e. not in Chromium); **now lazily initialized on first `detectLanguage`** — the 17 MB heap + 1.1 MB fetch are paid only when detection is actually used |
 | opus (`oggToWav`, Safari-only) | 2 workers per conversion, terminated after use | Clean |
@@ -331,10 +331,10 @@ the number the engineering in §6.4 moves toward the floor.
    rasterization throughput buys the CPU budget to shrink
    `BOUNDED_CACHE_WINDOW` toward 1–2 even on dense viewports — trading the
    last tens of cache MB for compute the SIMD units provide for free.
-5. **Lazy media workers** (rank 7 in §4) and **lazy fastText init**: defer
-   the remaining 24 MB WASM floor + ~4 worker runtimes until first
-   animation; on non-Chromium, don't pay fastText's fixed 17 MB until the
-   first `detectLanguage` call.
+5. **Lazy media workers** (rank 7 in §4) and **lazy fastText init**: both
+   done — fastText initializes on the first `detectLanguage` call
+   (session 4), and media workers spawn per index on first use (§8), so
+   boot pays for exactly as many workers as animations demand.
 6. **Upstream**: `localDb` LRU (rank 6) and store slice eviction (rank 5).
 
 ### 6.5 Measured ceilings on this machine (`perf/limits.mjs`)
@@ -461,3 +461,59 @@ architectural roadmap (§6.4) matters more than further rasterizer heroics.
   resizable-buffer trap of §6.6 — and the full `after-simd` measurement
   run (frame cache live at S2/S4, wasm floor 16.0 MB at boot).
 - No MTProto/API-layer behavior changed.
+
+## 8. Boot speed (login-screen critical path)
+
+Goal set in session 5: make first load visibly faster than `web.telegram.org/a`.
+Milestone = first render of the auth-screen container (`probe-waterfall.mjs`),
+fresh profile, headless system Chromium, CDP-throttled **10 Mbps / 40 ms RTT**,
+served by `serve-dist.mjs` (in-memory brotli q9 — the same compression class the
+production CDN uses). Medians of 5 runs.
+
+| Serving | Cold auth screen | Warm reload | Wire bytes to auth |
+|---|---|---|---|
+| `master` @ `eb9f746` (the exact build `web.telegram.org/a` ships), localhost | 472 ms | 286 ms | 541 KB / 24 req |
+| **This branch, localhost** | **449 ms** | **172 ms** | **255 KB / 12 req** |
+| Live `web.telegram.org/a`, same throttle, real network (reference) | 914 ms | — | 664 KB |
+
+Against the live site the branch is **2.0× faster cold** — but ~440 ms of the
+live number is TLS + CDN + DC round-trips that any self-hosted deployment also
+avoids, which is why the honest comparison row is master-on-localhost.
+
+What put the branch ahead of master on identical serving (sessions 5–7):
+
+1. **Wallpaper class only on the main screen** — took `pattern.svg` (496 KB raw,
+   the single largest login-path asset) off the boot waterfall.
+2. **colorjs.io out of the boot bundle** (`advancedColors.ts` split).
+3. **Shared-UI chunk inlined into importers** + `modulepreload` for the
+   runtime-loaded boot chunks (`fallback-*`, `qr-code-styling-*`), collapsing
+   the serial discovery chain.
+4. **Notification preview tree off the entry** — `util/notifications.tsx`
+   imported `MessageSummary`, dragging `ActionMessageText` and friends
+   (~55 KB source) into the entry for a feature that only runs when a push
+   arrives; now a dynamic import. The notification sound `Audio` element is
+   also created on first play instead of fetching `notification.mp3` at boot.
+5. **Small `.tgs` no longer inlined** as base64 into chunks (entry carried
+   ~30 KB of them).
+6. **Per-index lazy media workers** — boot went from 5 workers (GramJS + the
+   whole 4-worker media fleet, spawned because the QR plane is an animated
+   sticker) to 2; each extra worker (+4 MB WASM heap) now spawns only when the
+   instance round-robin actually reaches its index. Verified: mocked scenario
+   still renders frames on all 4 workers under load (`cachedFrames 279`).
+
+Result of 4+5: entry 539 → 480 KB raw (196 → 162 KB gzip); requests to auth
+24 → 12; zero long tasks on the boot path in the final probe.
+
+**Remaining levers, ranked** (the tail is now ~90 ms of exec+render after DCL,
+not bytes):
+
+1. *Auth-first entry split* — ~455 KB of entry source is the global store
+   machinery (`reducers` 147 + `selectors` 114 + `helpers` 93 + `actions` 65 +
+   `cache` 27 KB); the auth screen uses a sliver of it. Big, architectural,
+   biggest single win left (~60–80 ms cold).
+2. *Boot CPU profile* of the ~90 ms DCL→auth tail (sourcemapped) — nothing
+   should be guessed here before profiling.
+3. `deepLinkParser` (21 KB) and `@tauri-apps/api` (13 KB) still ride the web
+   entry; both are gateable.
+4. `fallback-*.js` (40 KB wire) is fetched on every boot before first paint —
+   inline the most common strings or ship a slimmer auth-only pack.

@@ -73,3 +73,19 @@ Node against real `.tgs` inputs, and (with `--page`) the renderer-side
 `createImageBitmap` / `drawImage` / `bitmaprenderer` ceilings in headless
 Chromium. Results go to `perf/out/limits.json`; interpretation lives in
 `MEMORY_AUDIT.md` §6.5.
+
+## Boot speed
+
+`node perf/serve-dist.mjs [dir] [port]` serves a build with in-memory brotli
+(q9). Always measure against this rather than an uncompressed static server —
+uncompressed serving inflates wire size ~2.5× and skews comparisons.
+
+`node perf/probe-waterfall.mjs <url> [--throttle] [--runs N] [--mbps N] [--rtt N]`
+loads the app in a fresh profile, waits for the auth screen, and prints the
+request waterfall, long tasks and per-run milestones. `--throttle` applies
+10 Mbps / 40 ms RTT via CDP so localhost and deployed origins compare fairly.
+
+`node perf/probe-warm.mjs <url> [runs]` measures a cached reload in the same
+context (the repeat-visit path).
+
+Results and the remaining lever list live in `MEMORY_AUDIT.md` §8.
