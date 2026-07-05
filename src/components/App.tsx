@@ -217,9 +217,12 @@ const App = ({
 
   useTauriDrag();
 
+  // The wallpaper assets referenced by `.bg` (`pattern.svg`, `chat-bg-br.png`) are only visible
+  // behind the main screen, so applying the class lazily keeps them off the login critical path
   useLayoutEffect(() => {
+    if (activeKey !== AppScreens.main) return;
     document.body.classList.add(styles.bg);
-  }, []);
+  }, [activeKey]);
 
   useLayoutEffect(() => {
     document.body.style.setProperty(
