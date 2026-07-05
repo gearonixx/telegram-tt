@@ -18,12 +18,31 @@ interface Params {
 }
 
 const WAITING = Symbol('WAITING');
+// The frame was handed to a `bitmaprenderer` canvas (which consumed it); re-requested on the next loop pass
+const CONSUMED = Symbol('CONSUMED');
 type Frame =
   undefined
   | typeof WAITING
+  | typeof CONSUMED
   | ImageBitmap;
 
+function isBitmap(frame: Frame): frame is ImageBitmap {
+  return Boolean(frame) && frame !== WAITING && frame !== CONSUMED;
+}
+
 type FrameCallback = (index: number) => void;
+
+type ViewInfo = {
+  canvas: HTMLCanvasElement;
+  ctx?: CanvasRenderingContext2D;
+  bitmapCtx?: ImageBitmapRenderingContext;
+  isLoaded?: boolean;
+  isPaused?: boolean;
+  isSharedCanvas?: boolean;
+  coords?: Params['coords'];
+  onLoad?: NoneToVoidFunction;
+  onFrame?: FrameCallback;
+};
 
 const HIGH_PRIORITY_QUALITY = (IS_ANDROID || IS_IOS) ? 0.75 : 1;
 const LOW_PRIORITY_QUALITY = IS_ANDROID ? 0.5 : 0.75;
@@ -66,16 +85,9 @@ let lastWorkerIndex = -1;
 class RLottie {
   // Config
 
-  private views = new Map<string, {
-    canvas: HTMLCanvasElement;
-    ctx: CanvasRenderingContext2D;
-    isLoaded?: boolean;
-    isPaused?: boolean;
-    isSharedCanvas?: boolean;
-    coords?: Params['coords'];
-    onLoad?: NoneToVoidFunction;
-    onFrame?: FrameCallback;
-  }>();
+  private views = new Map<string, ViewInfo>();
+
+  private hasBitmapRendererView = false;
 
   private imgSize!: number;
 
@@ -162,13 +174,17 @@ class RLottie {
 
   public removeView(viewId: string) {
     const {
-      canvas, ctx, isSharedCanvas, coords,
+      canvas, ctx, bitmapCtx, isSharedCanvas, coords,
     } = this.views.get(viewId)!;
 
     if (isSharedCanvas) {
-      ctx.clearRect(coords!.x, coords!.y, this.imgSize, this.imgSize);
+      ctx!.clearRect(coords!.x, coords!.y, this.imgSize, this.imgSize);
     } else {
       canvas.remove();
+    }
+
+    if (bitmapCtx) {
+      this.hasBitmapRendererView = false;
     }
 
     this.views.delete(viewId);
@@ -218,7 +234,7 @@ class RLottie {
       if (i === this.prevFrameIndex) {
         return frame;
       } else {
-        if (frame && frame !== WAITING) {
+        if (isBitmap(frame)) {
           discountCachedFrame(frame);
           frame.close();
         }
@@ -273,7 +289,7 @@ class RLottie {
     if (isCanvasDirty) {
       const sizeFactor = this.calcSizeFactor();
       ([canvasWidth, canvasHeight] = ensureCanvasSize(canvas, sizeFactor));
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      ctx!.clearRect(0, 0, canvasWidth, canvasHeight);
       canvas.dataset.isJustCleaned = 'true';
       requestMeasure(() => {
         canvas.dataset.isJustCleaned = 'false';
@@ -287,8 +303,8 @@ class RLottie {
 
     const frame = this.getFrame(this.prevFrameIndex) || this.getFrame(Math.round(this.approxFrameIndex));
 
-    if (frame && frame !== WAITING) {
-      ctx.drawImage(frame, containerInfo.coords.x, containerInfo.coords.y);
+    if (isBitmap(frame)) {
+      ctx!.drawImage(frame, containerInfo.coords.x, containerInfo.coords.y);
     }
   }
 
@@ -318,7 +334,6 @@ class RLottie {
 
       requestMutation(() => {
         const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d')!;
 
         canvas.classList.add(CANVAS_CLASS);
 
@@ -330,9 +345,20 @@ class RLottie {
 
         container.appendChild(canvas);
 
-        this.views.set(viewId, {
-          canvas, ctx, onLoad, onFrame,
-        });
+        // One view per instance hands frames to the compositor directly — no 2D backing store and no
+        // main-thread raster. `transferFromImageBitmap` consumes the bitmap, so any further views of the
+        // same animation keep the `drawImage` path and are drawn before the transfer
+        const bitmapCtx = (!this.hasBitmapRendererView && canvas.getContext('bitmaprenderer')) || undefined;
+        if (bitmapCtx) {
+          this.hasBitmapRendererView = true;
+          this.views.set(viewId, {
+            canvas, bitmapCtx, onLoad, onFrame,
+          });
+        } else {
+          this.views.set(viewId, {
+            canvas, ctx: canvas.getContext('2d')!, onLoad, onFrame,
+          });
+        }
       });
     } else {
       if (!container.isConnected) {
@@ -391,7 +417,7 @@ class RLottie {
 
   private clearCache() {
     this.frames.forEach((frame) => {
-      if (frame && frame !== WAITING) {
+      if (isBitmap(frame)) {
         discountCachedFrame(frame);
         frame.close();
       }
@@ -521,8 +547,9 @@ class RLottie {
 
       const frameIndex = Math.round(this.approxFrameIndex);
       const frame = this.getFrame(frameIndex);
-      if (!frame || frame === WAITING) {
-        if (!frame) {
+      const isConsumedStale = frame === CONSUMED && frameIndex !== this.prevFrameIndex;
+      if (!frame || frame === WAITING || isConsumedStale) {
+        if (!frame || isConsumedStale) {
           this.requestFrame(frameIndex);
         }
 
@@ -537,23 +564,46 @@ class RLottie {
         this.cleanupPrevFrame(frameIndex);
       }
 
-      if (frameIndex !== this.prevFrameIndex) {
+      if (frameIndex !== this.prevFrameIndex && frame !== CONSUMED) {
+        // The transfer view is drawn last: `transferFromImageBitmap` detaches the bitmap
+        let transferView: ViewInfo | undefined;
+
         this.views.forEach((containerData) => {
           const {
-            ctx, isLoaded, isPaused, coords: { x, y } = {}, onLoad, onFrame,
+            ctx, bitmapCtx, isLoaded, isPaused, coords: { x, y } = {}, onLoad, onFrame,
           } = containerData;
 
-          if (!isLoaded || !isPaused) {
-            ctx.clearRect(x || 0, y || 0, this.imgSize, this.imgSize);
-            ctx.drawImage(frame, x || 0, y || 0);
-            onFrame?.(frameIndex);
+          if (isLoaded && isPaused) {
+            return;
           }
+
+          if (bitmapCtx) {
+            transferView = containerData;
+            return;
+          }
+
+          ctx!.clearRect(x || 0, y || 0, this.imgSize, this.imgSize);
+          ctx!.drawImage(frame, x || 0, y || 0);
+          onFrame?.(frameIndex);
 
           if (!isLoaded) {
             containerData.isLoaded = true;
             onLoad?.();
           }
         });
+
+        if (transferView) {
+          // Discount first: the transfer detaches the bitmap and zeroes its dimensions
+          discountCachedFrame(frame);
+          transferView.bitmapCtx!.transferFromImageBitmap(frame);
+          this.frames[frameIndex] = CONSUMED;
+          transferView.onFrame?.(frameIndex);
+
+          if (!transferView.isLoaded) {
+            transferView.isLoaded = true;
+            transferView.onLoad?.();
+          }
+        }
 
         this.prevFrameIndex = frameIndex;
       }
@@ -640,7 +690,7 @@ class RLottie {
 
     const prevFrameIndex = cycleRestrict(this.framesCount!, frameIndex - 1);
     const prevFrame = this.frames[prevFrameIndex];
-    if (prevFrame && prevFrame !== WAITING) {
+    if (isBitmap(prevFrame)) {
       discountCachedFrame(prevFrame);
       prevFrame.close();
     }
@@ -656,15 +706,19 @@ class RLottie {
 
     for (let i = 0; i < this.frames.length; i++) {
       const frame = this.frames[i];
-      if (!frame || frame === WAITING || i === this.prevFrameIndex) {
+      if (i === this.prevFrameIndex) {
         continue;
       }
 
       const distance = cycleRestrict(framesCount, (i - currentFrameIndex) * this.direction);
       if (distance >= BOUNDED_CACHE_WINDOW) {
-        discountCachedFrame(frame);
-        frame.close();
-        this.frames[i] = undefined;
+        if (isBitmap(frame)) {
+          discountCachedFrame(frame);
+          frame.close();
+        }
+        if (frame === CONSUMED || isBitmap(frame)) {
+          this.frames[i] = undefined;
+        }
       }
     }
   }
