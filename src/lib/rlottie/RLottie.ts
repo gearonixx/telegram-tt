@@ -1,5 +1,6 @@
 import type Color from 'colorjs.io';
 
+import { DEBUG } from '../../config';
 import { animate } from '../../util/animation';
 import {
   IS_ANDROID, IS_IOS, IS_SAFARI,
@@ -36,6 +37,26 @@ const CANVAS_CLASS = 'rlottie-canvas';
 
 const workers = launchMediaWorkers().map(({ connector }) => connector);
 const instancesByRenderId = new Map<string, RLottie>();
+
+const frameStats = { count: 0, bytes: 0 };
+
+function countCachedFrame(frame: ImageBitmap) {
+  frameStats.count++;
+  frameStats.bytes += frame.width * frame.height * 4;
+}
+
+function discountCachedFrame(frame: ImageBitmap) {
+  frameStats.count--;
+  frameStats.bytes -= frame.width * frame.height * 4;
+}
+
+if (DEBUG && typeof window !== 'undefined') {
+  (window as any).__rlottieStats = () => ({
+    instances: instancesByRenderId.size,
+    cachedFrames: frameStats.count,
+    cachedFrameBytes: frameStats.bytes,
+  });
+}
 
 const PENDING_CANVAS_RESIZES = new WeakMap<HTMLCanvasElement, Promise<void>>();
 
@@ -198,6 +219,7 @@ class RLottie {
           return frame;
         } else {
           if (frame && frame !== WAITING) {
+            discountCachedFrame(frame);
             frame.close();
           }
 
@@ -373,6 +395,7 @@ class RLottie {
   private clearCache() {
     this.frames.forEach((frame) => {
       if (frame && frame !== WAITING) {
+        discountCachedFrame(frame);
         frame.close();
       }
     });
@@ -610,6 +633,10 @@ class RLottie {
     }
 
     const prevFrameIndex = cycleRestrict(this.framesCount!, frameIndex - 1);
+    const prevFrame = this.frames[prevFrameIndex];
+    if (prevFrame && prevFrame !== WAITING) {
+      discountCachedFrame(prevFrame);
+    }
     this.frames[prevFrameIndex] = undefined;
   }
 
@@ -619,6 +646,7 @@ class RLottie {
     }
 
     this.frames[frameIndex] = imageBitmap;
+    countCachedFrame(imageBitmap);
 
     if (this.isWaiting) {
       this.doPlay();

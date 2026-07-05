@@ -101,8 +101,8 @@ class TelegramClient {
     mockScenario,
   }: {
     mockScenario: string;
-  }) {
-    return this.loadScenario(mockScenario);
+  }, onConnected?: NoneToVoidFunction) {
+    return this.loadScenario(mockScenario).then(() => onConnected?.());
   }
 
   async invoke<A, R>(request: Api.Request<A, R>) {

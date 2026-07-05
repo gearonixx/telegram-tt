@@ -1,5 +1,6 @@
 import type { CancellableCallback } from '../../util/PostMessageConnector';
 
+import { DEBUG } from '../../config';
 import Module, { allocate, intArrayFromString } from './rlottie-wasm';
 import { createWorkerInterface } from '../../util/createPostMessageInterface';
 
@@ -30,6 +31,14 @@ const renderers = new Map<string, {
   imageData: ImageData;
   customColor?: [number, number, number];
 }>();
+
+if (DEBUG) {
+  (globalThis as any).__rlottieWasmStats = () => ({
+    wasmHeapBytes: Module.HEAPU8?.length,
+    renderers: renderers.size,
+    rendererImageDataBytes: Array.from(renderers.values()).reduce((sum, r) => sum + r.imageData.data.length, 0),
+  });
+}
 
 async function init(
   key: string,

@@ -13,7 +13,8 @@ let instances: {
 }[] | undefined;
 
 export default function launchMediaWorkers() {
-  if (IS_TEST) return [];
+  // Unit tests run without `Worker`; browser-based test runs (mocked client) need real media workers
+  if (IS_TEST && typeof Worker === 'undefined') return [];
   if (!instances) {
     instances = new Array(MAX_WORKERS).fill(undefined).map(
       () => {

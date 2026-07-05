@@ -1,0 +1,93 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "self": true
+    }
+  ],
+  "chats": [],
+  "channels": [
+    {
+      "id": "2",
+      "title": "Perf Channel"
+    },
+    {
+      "id": "3",
+      "title": "Perf Media"
+    }
+  ],
+  "dialogs": {
+    "active": [
+      {
+        "id": "1"
+      },
+      {
+        "id": "2"
+      },
+      {
+        "id": "3"
+      }
+    ],
+    "archived": []
+  },
+  "messages": {
+    "1": [
+      {
+        "id": 1,
+        "message": "Hello world!",
+        "media": {
+          "type": "photo",
+          "id": 1
+        }
+      }
+    ],
+    "2": [
+      {
+        "id": 600,
+        "message": "Perf message #600"
+      }
+    ],
+    "3": [
+      {
+        "id": 240,
+        "message": "Perf photo #240"
+      }
+    ]
+  },
+  "availableReactions": [],
+  "dialogFilters": [
+    {
+      "groups": true,
+      "broadcasts": true,
+      "id": 1,
+      "title": "Chats"
+    }
+  ],
+  "documents": [
+    {
+      "id": 1,
+      "url": "lock.png",
+      "mimeType": "image/png"
+    },
+    {
+      "id": 2,
+      "url": "TestLottie1.tgs",
+      "mimeType": "application/x-tgsticker"
+    },
+    {
+      "id": 3,
+      "url": "TestLottie2.tgs",
+      "mimeType": "application/x-tgsticker"
+    },
+    {
+      "id": 4,
+      "url": "TestLottie3.tgs",
+      "mimeType": "application/x-tgsticker"
+    },
+    {
+      "id": 5,
+      "url": "perf-photo.png",
+      "mimeType": "image/png"
+    }
+  ]
+}

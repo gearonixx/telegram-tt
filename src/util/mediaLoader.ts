@@ -36,6 +36,23 @@ const fetchPromises = new Map<string, Promise<ApiPreparedMedia | undefined>>();
 const progressCallbacks = new Map<string, Map<string, ApiOnProgress>>();
 const cancellableCallbacks = new Map<string, ApiOnProgress>();
 
+if (DEBUG && typeof window !== 'undefined') {
+  (window as any).__mediaCacheStats = () => {
+    let textBytes = 0;
+    let objectUrls = 0;
+    memoryCache.forEach((media) => {
+      if (typeof media !== 'string') return;
+      if (media.startsWith('blob:')) {
+        objectUrls++;
+      } else {
+        textBytes += media.length * 2;
+      }
+    });
+
+    return { entries: memoryCache.size, objectUrls, textBytes };
+  };
+}
+
 export function fetch<T extends ApiMediaFormat>(
   url: string,
   mediaFormat: T,
