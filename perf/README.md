@@ -64,3 +64,12 @@ node perf/measure.mjs --mode real --url http://localhost:4173/ \
 Results land in `perf/out/<label>.json` and are printed as a table. Numbers
 from the dev server are consistent between runs but higher than a production
 build; compare like with like.
+
+## Hardware ceilings
+
+`node perf/limits.mjs [--page]` benchmarks each pipeline stage in isolation:
+DRAM copy bandwidth, the vendored rlottie WASM rasterizer driven natively in
+Node against real `.tgs` inputs, and (with `--page`) the renderer-side
+`createImageBitmap` / `drawImage` / `bitmaprenderer` ceilings in headless
+Chromium. Results go to `perf/out/limits.json`; interpretation lives in
+`MEMORY_AUDIT.md` §6.5.
