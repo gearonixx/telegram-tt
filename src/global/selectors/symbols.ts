@@ -2,8 +2,8 @@ import type { ApiSticker, ApiStickerSet, ApiStickerSetInfo } from '../../api/typ
 import type { GlobalState, TabArgs } from '../types';
 
 import { RESTRICTED_EMOJI_SET_ID, TON_CURRENCY_CODE } from '../../config';
+import { convertCurrencyFromBaseUnit } from '../../util/convertCurrency';
 import { getCurrentTabId } from '../../util/establishMultitabRole';
-import { convertCurrencyFromBaseUnit } from '../../util/formatCurrency';
 import { selectTabState } from './tabs';
 import { selectIsCurrentUserPremium } from './users';
 

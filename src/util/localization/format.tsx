@@ -2,7 +2,7 @@ import type { ApiTypeCurrencyAmount } from '../../api/types';
 import type { LangFn } from './types';
 
 import { STARS_ICON_PLACEHOLDER, TON_CURRENCY_CODE } from '../../config';
-import { convertTonFromNanos } from '../../util/formatCurrency';
+import { convertTonFromNanos } from '../../util/convertCurrency';
 import buildClassName from '../buildClassName';
 
 import GramIcon from '../../components/common/icons/GramIcon';

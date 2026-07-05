@@ -4,24 +4,15 @@ import type { LangFn } from './localization';
 
 import { STARS_CURRENCY_CODE, TON_CURRENCY_CODE } from '../config';
 import { formatStarsAsIcon, formatTonAsIcon } from './localization/format';
+import { convertCurrencyFromBaseUnit } from './convertCurrency';
 
 const FALLBACK_LANG_CODE = 'en';
 
-export function convertCurrencyFromBaseUnit(amount: number, currency: string) {
-  return amount / 10 ** getCurrencyExp(currency);
-}
-
-export function convertCurrencyToBaseUnit(amount: number, currency: string) {
-  return amount * 10 ** getCurrencyExp(currency);
-}
-
-export function convertTonFromNanos(nanos: number): number {
-  return convertCurrencyFromBaseUnit(nanos, TON_CURRENCY_CODE);
-}
-
-export function convertTonToNanos(ton: number): number {
-  return convertCurrencyToBaseUnit(ton, TON_CURRENCY_CODE);
-}
+// Re-exported so existing importers keep a single currency-utils entry point;
+// the pure converters live in a JSX-free module to stay off the boot-critical path
+export {
+  convertCurrencyFromBaseUnit, convertCurrencyToBaseUnit, convertTonFromNanos, convertTonToNanos, convertTonToUsd,
+} from './convertCurrency';
 
 export function formatCurrency(
   lang: LangFn,
@@ -44,11 +35,6 @@ export function formatCurrency(
   }
 
   return formatCurrencyAsString(totalPrice, currency, lang.code, options);
-}
-
-export function convertTonToUsd(amount: number, usdRate: number, isInNanos: boolean = false): number {
-  const tonInRegularUnits = isInNanos ? convertTonFromNanos(amount) : amount;
-  return tonInRegularUnits * usdRate * 100;
 }
 
 export function formatCurrencyAsString(
@@ -83,26 +69,4 @@ export function formatCurrencyAsString(
     style: 'currency',
     currency,
   }).format(price);
-}
-
-function getCurrencyExp(currency: string) {
-  if (currency === TON_CURRENCY_CODE) {
-    return 9;
-  }
-  if (currency === 'CLF') {
-    return 4;
-  }
-  if (['BHD', 'IQD', 'JOD', 'KWD', 'LYD', 'OMR', 'TND'].includes(currency)) {
-    return 3;
-  }
-  if ([
-    'BIF', 'BYR', 'CLP', 'CVE', 'DJF', 'GNF', 'ISK', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'UGX', 'UYI',
-    'VND', 'VUV', 'XAF', 'XOF', 'XPF', STARS_CURRENCY_CODE,
-  ].includes(currency)) {
-    return 0;
-  }
-  if (currency === 'MRO') {
-    return 1;
-  }
-  return 2;
 }
