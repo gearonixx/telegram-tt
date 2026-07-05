@@ -35,7 +35,7 @@ import readFallbackStrings from '../data/readFallbackStrings';
 import { initialEstablishmentPromise, isCurrentTabMaster } from '../establishMultitabRole';
 import { omit, unique } from '../iteratees';
 import { replaceInStringsWithTeact } from '../replaceWithTeact';
-import { fastRaf } from '../schedulers';
+import { fastRaf, onIdle } from '../schedulers';
 import { resetDateFormatCache } from './dateFormat';
 
 import Deferred from '../Deferred';
@@ -218,21 +218,20 @@ export async function initLocalization(langCode: string, canLoadFromServer?: boo
     fetchDifference();
   } else if (canLoadFromServer) {
     // Not awaited: gating the first render on the `fetchLanguage` + `fetchLangPack` round-trips
-    // would serialize the network behind boot. The modulepreloaded fallback pack covers the
-    // boot screens, and the requested pack swaps in via `scheduleCallbacks` when it arrives.
+    // would serialize the network behind boot. `initialStrings` covers the boot screens, and
+    // the requested pack swaps in via `scheduleCallbacks` when it arrives.
     createFormatters();
     loadAndChangeLanguage(langCode);
-  }
-
-  // Always start loading fallback pack in the background. Some languages may not have every string translated.
-  const fallbackLoad = loadFallbackPack();
-  if (!cachedData) {
-    await fallbackLoad;
   }
 
   translationFn = createTranslationFn();
   scheduleCallbacks();
   localizationReady.resolve();
+
+  // Load the full fallback pack after first paint. The auth screens are covered by
+  // `initialStrings`, so fetching and parsing the ~40 KB pack must not race the boot render.
+  // `getString` self-heals too: a miss on any key not yet in the pack triggers `loadFallbackPack`.
+  onIdle(loadFallbackPack);
 }
 
 export async function refreshFromCache(langCode: string) {
