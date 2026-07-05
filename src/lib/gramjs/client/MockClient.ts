@@ -51,6 +51,12 @@ class TelegramClient {
 
   private _log: Logger;
 
+  // Minimal stub so session-reading paths (e.g. `registerDevice`) don't throw
+  // in mocked mode, where there is no real MTProto session
+  public session = {
+    getAuthKey: () => ({ getKey: () => new Uint8Array() }),
+  };
+
   constructor() {
     this._log = new Logger();
   }
