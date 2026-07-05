@@ -1,12 +1,12 @@
 import type { ThreadId } from '../types';
 
-import { RE_TG_LINK, RE_TME_LINK } from '../config';
 import { IS_BAD_URL_PARSER } from './browser/globalEnvironment';
 import { ensureProtocol } from './browser/url';
 import { parseTimestampDuration } from './dates/timestamp';
 import { isBase64Url } from './encoding/base64';
 import { toChannelId } from './entities/ids';
 import { isUsernameValid } from './entities/username';
+import { isDeepLink } from './isDeepLink';
 
 export type DeepLinkMethod = 'resolve' | 'login' | 'passport' | 'settings' | 'join' | 'addstickers' | 'addemoji' |
   'setlanguage' | 'addtheme' | 'addstyle' | 'confirmphone' | 'socks' | 'proxy' | 'privatepost' | 'bg' | 'share' |
@@ -171,10 +171,6 @@ type OAuthLinkBuilderParams = Omit<BuilderParams<OAuthLink>, 'url'> & {
 
 const ELIGIBLE_HOSTNAMES = new Set(['t.me', 'telegram.me', 'telegram.dog']);
 const MAX_BOT_START_PARAMETER_LENGTH = 64;
-
-export function isDeepLink(link: string): boolean {
-  return Boolean(link.match(RE_TME_LINK) || link.match(RE_TG_LINK));
-}
 
 export function tryParseDeepLink(link: string): DeepLink | undefined {
   if (!isDeepLink(link)) {

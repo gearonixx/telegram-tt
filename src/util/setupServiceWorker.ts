@@ -4,7 +4,6 @@ import { DEBUG, DEBUG_MORE, IS_TEST } from '../config';
 // eslint-disable-next-line import-x/default
 import serviceWorkerUrl from '../serviceWorker/service.worker.ts?worker&url';
 import { IS_ANDROID, IS_IOS, IS_SERVICE_WORKER_SUPPORTED } from './browser/windowEnvironment';
-import { formatShareText } from './deeplink';
 import { validateFiles } from './files';
 import { notifyClientReady, playNotifySoundDebounced } from './notifications';
 
@@ -35,9 +34,12 @@ function handleWorkerMessage(e: MessageEvent) {
       playNotifySoundDebounced(action.payload.id);
       break;
     case 'share':
-      dispatch.openChatWithDraft({
-        text: formatShareText(payload.url, payload.text, payload.title),
-        files: validateFiles(payload.files),
+      // Loaded on demand to keep the deep-link parser out of the boot-critical bundle
+      import('./deeplink').then(({ formatShareText }) => {
+        dispatch.openChatWithDraft({
+          text: formatShareText(payload.url, payload.text, payload.title),
+          files: validateFiles(payload.files),
+        });
       });
       break;
   }

@@ -86,21 +86,22 @@ function cacheLangData(data: CachedLangData) {
   return MAIN_IDB_STORE.set(`${LANGPACK_STORE_PREFIX}${data.language.langCode}`, data);
 }
 
-let fallbackLoadPromise: Promise<CachedLangData> | undefined;
-async function loadFallbackPack() {
-  if (fallbackLangPack || fallbackLoadPromise) return;
-  fallbackLoadPromise = readFallbackStrings();
-  const fallbackData = await fallbackLoadPromise;
-  fallbackLangPack = fallbackData.langPack;
+let fallbackLoadPromise: Promise<void> | undefined;
+function loadFallbackPack() {
+  if (fallbackLangPack || fallbackLoadPromise) return fallbackLoadPromise;
+  fallbackLoadPromise = readFallbackStrings().then((fallbackData) => {
+    fallbackLangPack = fallbackData.langPack;
 
-  TRANSLATION_CACHE.clear();
+    TRANSLATION_CACHE.clear();
 
-  if (!language) {
-    updateLanguage(fallbackData.language);
-  } else {
-    translationFn = createTranslationFn();
-    scheduleCallbacks();
-  }
+    if (!language) {
+      updateLanguage(fallbackData.language);
+    } else {
+      translationFn = createTranslationFn();
+      scheduleCallbacks();
+    }
+  });
+  return fallbackLoadPromise;
 }
 
 async function fetchDifference() {
@@ -216,11 +217,18 @@ export async function initLocalization(langCode: string, canLoadFromServer?: boo
 
     fetchDifference();
   } else if (canLoadFromServer) {
-    await loadAndChangeLanguage(langCode);
+    // Not awaited: gating the first render on the `fetchLanguage` + `fetchLangPack` round-trips
+    // would serialize the network behind boot. The modulepreloaded fallback pack covers the
+    // boot screens, and the requested pack swaps in via `scheduleCallbacks` when it arrives.
+    createFormatters();
+    loadAndChangeLanguage(langCode);
   }
 
   // Always start loading fallback pack in the background. Some languages may not have every string translated.
-  loadFallbackPack();
+  const fallbackLoad = loadFallbackPack();
+  if (!cachedData) {
+    await fallbackLoad;
+  }
 
   translationFn = createTranslationFn();
   scheduleCallbacks();
