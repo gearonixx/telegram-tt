@@ -1,0 +1,2 @@
+import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./vim-Cf_22MW4.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/vim" instead of "highlight.js/lib/languages/vim.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=vim.js-CIvtyyIf.js.map

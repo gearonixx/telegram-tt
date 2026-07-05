@@ -1,0 +1,2 @@
+import{hS as e}from"./index-ZsrbboX4.js";var t=e(((e,t)=>{function n(e){return{name:`VBScript in HTML`,subLanguage:`xml`,contains:[{begin:`<%`,end:`%>`,subLanguage:`vbscript`}]}}t.exports=n}));export default t();export{t};
+//# sourceMappingURL=vbscript-html-CAMudUQJ.js.map

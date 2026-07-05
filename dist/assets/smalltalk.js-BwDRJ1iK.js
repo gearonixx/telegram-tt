@@ -1,0 +1,2 @@
+import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./smalltalk-D83HM_Kb.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/smalltalk" instead of "highlight.js/lib/languages/smalltalk.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=smalltalk.js-BwDRJ1iK.js.map

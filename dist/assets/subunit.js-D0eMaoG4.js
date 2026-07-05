@@ -1,0 +1,2 @@
+import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./subunit-B7W1hPmt.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/subunit" instead of "highlight.js/lib/languages/subunit.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=subunit.js-D0eMaoG4.js.map

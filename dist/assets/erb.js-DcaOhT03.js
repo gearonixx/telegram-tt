@@ -1,0 +1,2 @@
+import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./erb-CUovJ_hg.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/erb" instead of "highlight.js/lib/languages/erb.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=erb.js-DcaOhT03.js.map

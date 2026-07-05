@@ -1,0 +1,2 @@
+import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./livecodeserver-BtTr2PrZ.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/livecodeserver" instead of "highlight.js/lib/languages/livecodeserver.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=livecodeserver.js-BUUjyO7n.js.map

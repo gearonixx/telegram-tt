@@ -1,0 +1,2 @@
+import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./properties-BlD1oBHn.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/properties" instead of "highlight.js/lib/languages/properties.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=properties.js-BLFYh0Q4.js.map

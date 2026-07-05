@@ -1,0 +1,2 @@
+import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./markdown-DE564g0d.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/markdown" instead of "highlight.js/lib/languages/markdown.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=markdown.js-DetJdKR0.js.map

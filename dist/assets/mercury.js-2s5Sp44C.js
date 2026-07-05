@@ -1,0 +1,2 @@
+import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./mercury-BCFPyael.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/mercury" instead of "highlight.js/lib/languages/mercury.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=mercury.js-2s5Sp44C.js.map

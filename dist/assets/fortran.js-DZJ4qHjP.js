@@ -1,0 +1,2 @@
+import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./fortran-B8oh5h-R.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/fortran" instead of "highlight.js/lib/languages/fortran.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=fortran.js-DZJ4qHjP.js.map
