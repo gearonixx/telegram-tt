@@ -4,7 +4,7 @@ import { getActions, withGlobal } from '../../../global';
 import type { ApiPeer } from '../../../api/types';
 import { ApiMessageEntityTypes } from '../../../api/types';
 
-import { selectUser } from '../../../global/selectors';
+import { selectUser } from '../../../global/selectors/users';
 
 import useAppLayout from '../../../hooks/useAppLayout';
 

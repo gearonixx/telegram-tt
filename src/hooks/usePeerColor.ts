@@ -3,7 +3,7 @@ import { useRef } from '@teact';
 import type { ApiPeer, ApiTypePeerColor } from '../api/types';
 import type { CustomPeer, ThemeKey } from '../types';
 
-import { getPeerColorCollectibleColorCount, getPeerColorCount, getPeerColorKey } from '../global/helpers';
+import { getPeerColorCollectibleColorCount, getPeerColorCount, getPeerColorKey } from '../global/helpers/chats';
 import buildStyle from '../util/buildStyle';
 import { generateColorVariations, generatePeerColorGradient } from '../util/theme';
 import useSyncEffect from './useSyncEffect';

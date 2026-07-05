@@ -1,7 +1,7 @@
 import { memo } from '../../lib/teact/teact';
 import { withGlobal } from '../../global';
 
-import { selectTabState } from '../../global/selectors';
+import { selectTabState } from '../../global/selectors/tabs';
 import { Bundles } from '../../util/moduleLoader';
 
 import useModuleLoader from '../../hooks/useModuleLoader';

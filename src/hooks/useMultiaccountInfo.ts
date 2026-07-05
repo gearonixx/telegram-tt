@@ -4,8 +4,8 @@ import { getGlobal } from '../global';
 import type { ApiUser } from '../api/types';
 
 import { SESSION_ACCOUNT_PREFIX } from '../config';
-import { getChatAvatarHash } from '../global/helpers';
-import { selectIsSynced } from '../global/selectors';
+import { getChatAvatarHash } from '../global/helpers/avatar';
+import { selectIsSynced } from '../global/selectors/ui';
 import { preloadImage } from '../util/files';
 import { resizeImage } from '../util/imageResize';
 import { ACCOUNT_SLOT, getAccountsInfo, storeAccountData } from '../util/multiaccount';

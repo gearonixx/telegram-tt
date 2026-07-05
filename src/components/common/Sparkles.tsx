@@ -2,7 +2,7 @@ import { memo } from '../../lib/teact/teact';
 
 import type { GlobalState } from '../../global/types';
 
-import { selectTabState } from '../../global/selectors';
+import { selectTabState } from '../../global/selectors/tabs';
 import buildClassName from '../../util/buildClassName';
 import buildStyle from '../../util/buildStyle';
 

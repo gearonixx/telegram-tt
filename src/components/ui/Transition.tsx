@@ -4,7 +4,7 @@ import { addExtraClass, removeExtraClass, setExtraStyles, toggleExtraClass } fro
 import { getGlobal } from '../../global';
 
 import { requestForcedReflow, requestMutation } from '../../lib/fasterdom/fasterdom';
-import { selectCanAnimateInterface } from '../../global/selectors';
+import { selectCanAnimateInterface } from '../../global/selectors/ui';
 import buildClassName from '../../util/buildClassName';
 import { waitForAnimationEnd, waitForTransitionEnd } from '../../util/cssAnimationEndListeners';
 import forceReflow from '../../util/forceReflow';

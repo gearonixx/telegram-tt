@@ -3,7 +3,7 @@ import type React from '../../lib/teact/teact';
 import { memo, useEffect, useMemo } from '../../lib/teact/teact';
 import { getGlobal } from '../../global';
 
-import { selectCanAnimateInterface } from '../../global/selectors';
+import { selectCanAnimateInterface } from '../../global/selectors/ui';
 import buildClassName from '../../util/buildClassName';
 import { throttleWithTickEnd } from '../../util/schedulers';
 

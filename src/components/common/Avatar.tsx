@@ -11,18 +11,10 @@ import type { CustomPeer, StoryViewerOrigin } from '../../types';
 import { ApiMediaFormat } from '../../api/types';
 
 import { IS_TEST } from '../../config';
-import {
-  getChatAvatarHash,
-  getChatTitle,
-  getPeerColorKey,
-  getPeerStoryHtmlId,
-  getUserFullName,
-  getVideoProfilePhotoMediaHash,
-  getWebDocumentHash,
-  isAnonymousForwardsChat,
-  isChatWithRepliesBot,
-  isDeletedUser,
-} from '../../global/helpers';
+import { getChatAvatarHash } from '../../global/helpers/avatar';
+import { getChatTitle, getPeerColorKey, isAnonymousForwardsChat, isChatWithRepliesBot } from '../../global/helpers/chats';
+import { getPeerStoryHtmlId, getUserFullName, isDeletedUser } from '../../global/helpers/users';
+import { getVideoProfilePhotoMediaHash, getWebDocumentHash } from '../../global/helpers/messageMedia';
 import { isApiPeerChat, isApiPeerUser } from '../../global/helpers/peers';
 import buildClassName, { createClassNameBuilder } from '../../util/buildClassName';
 import buildStyle from '../../util/buildStyle';

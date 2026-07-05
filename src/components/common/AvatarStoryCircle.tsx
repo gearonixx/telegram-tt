@@ -6,7 +6,8 @@ import { withGlobal } from '../../global';
 import type { ApiTypeStory } from '../../api/types';
 import type { ThemeKey } from '../../types';
 
-import { selectPeerStories, selectTheme } from '../../global/selectors';
+import { selectPeerStories } from '../../global/selectors/stories';
+import { selectTheme } from '../../global/selectors/ui';
 import buildClassName from '../../util/buildClassName';
 import buildStyle from '../../util/buildStyle';
 import { REM } from './helpers/mediaDimensions';

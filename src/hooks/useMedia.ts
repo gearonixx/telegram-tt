@@ -2,7 +2,7 @@ import { useEffect } from '../lib/teact/teact';
 
 import { ApiMediaFormat } from '../api/types';
 
-import { selectIsSynced } from '../global/selectors';
+import { selectIsSynced } from '../global/selectors/ui';
 import { IS_PROGRESSIVE_SUPPORTED } from '../util/browser/windowEnvironment';
 import * as mediaLoader from '../util/mediaLoader';
 import useSelector from './data/useSelector';

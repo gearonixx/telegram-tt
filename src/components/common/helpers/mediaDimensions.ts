@@ -3,7 +3,7 @@ import type {
 } from '../../../api/types';
 
 import { STICKER_SIZE_INLINE_DESKTOP_FACTOR, STICKER_SIZE_INLINE_MOBILE_FACTOR } from '../../../config';
-import { getPhotoInlineDimensions, getVideoDimensions } from '../../../global/helpers';
+import { getPhotoInlineDimensions, getVideoDimensions } from '../../../global/helpers/messageMedia';
 import { IS_TOUCH_ENV } from '../../../util/browser/windowEnvironment';
 import windowSize from '../../../util/windowSize';
 
