@@ -238,12 +238,12 @@ const CRITICAL_RUNTIME_CHUNK_RE = /^(?:fallback|qr-code-styling)-[\w-]+\.js$/;
 
 // Mirrors `RE_CACHE_FIRST_ASSETS` in `src/serviceWorker/service.worker.ts`
 const SW_CACHEABLE_ASSET_RE = new RegExp(
-  /(?:^assets\/[^/]+|^(?:[^/]+\.)?worker|^index)-[\w-]{8}/.source
-  + /\.(?:js|css|woff2?|svg|png|jpe?g|tgs|json|wasm)$/.source,
+  '(?:^assets/[^/]+|^(?:[^/]+\\.)?worker|^index)-[\\w-]{8}'
+  + '\\.(?:js|css|woff2?|svg|png|jpe?g|tgs|json|wasm)$',
 );
 const SW_BOOT_ASSET_RE = new RegExp(
-  /^(?:assets\/(?:index|fallback|qr-code-styling|main)-[\w-]+\.(?:js|css)/.source
-  + /|assets\/Roboto-(?:Regular|Medium)[\w-]*\.woff2)$/.source,
+  '^(?:assets/(?:index|fallback|qr-code-styling|main)-[\\w-]+\\.(?:js|css)'
+  + '|assets/Roboto-(?:Regular|Medium)[\\w-]*\\.woff2)$',
 );
 const SW_ASSET_MANIFEST = 'sw-asset-manifest.json';
 
