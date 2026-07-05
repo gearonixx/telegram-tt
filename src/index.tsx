@@ -11,7 +11,6 @@ import {
   DEBUG, STRICTERDOM_ENABLED,
 } from './config';
 import { enableStrict, requestMutation } from './lib/fasterdom/fasterdom';
-import { selectChat, selectCurrentMessageList, selectPeerFullInfo, selectTabState } from './global/selectors';
 import { selectSharedSettings } from './global/selectors/sharedState';
 import { betterView } from './util/betterView';
 import { IS_TAURI } from './util/browser/globalEnvironment';
@@ -103,7 +102,15 @@ async function init() {
   }
 
   if (DEBUG) {
-    document.addEventListener('dblclick', () => {
+    document.addEventListener('dblclick', async () => {
+      // Loaded on demand from the concrete modules: a static (or barrel) import
+      // would drag the message selector tree into the boot-critical bundle
+      // for a debug-only handler
+      const [{ selectChat, selectPeerFullInfo }, { selectCurrentMessageList }, { selectTabState }] = await Promise.all([
+        import('./global/selectors/chats'),
+        import('./global/selectors/messages'),
+        import('./global/selectors/tabs'),
+      ]);
       const currentGlobal = getGlobal();
       const currentMessageList = selectCurrentMessageList(currentGlobal);
       // eslint-disable-next-line no-console

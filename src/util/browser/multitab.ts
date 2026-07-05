@@ -7,7 +7,7 @@ import type { MethodArgs, Methods } from '../../api/gramjs/methods/types';
 import type { ApiInitialArgs } from '../../api/types';
 import type { GlobalState } from '../../global/types';
 
-import { selectTabState } from '../../global/selectors';
+import { selectTabState } from '../../global/selectors/tabs';
 import {
   callApiLocal,
   cancelApiProgressMaster,

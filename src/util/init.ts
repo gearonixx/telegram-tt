@@ -6,7 +6,7 @@ import {
   getGlobal, setGlobal,
 } from '../global/index';
 import { INITIAL_GLOBAL_STATE } from '../global/initialState';
-import { updatePasscodeSettings } from '../global/reducers';
+import { updatePasscodeSettings } from '../global/reducers/passcode';
 import { cloneDeep } from './iteratees';
 import { clearStoredSession } from './sessions';
 

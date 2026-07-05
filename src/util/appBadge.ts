@@ -1,7 +1,7 @@
 import { getGlobal } from '../global';
 
 import { DEBUG } from '../config';
-import { selectTabState } from '../global/selectors';
+import { selectTabState } from '../global/selectors/tabs';
 import { IS_TAURI } from './browser/globalEnvironment';
 
 export function updateAppBadge(unreadCount: number, isMuted?: boolean) {

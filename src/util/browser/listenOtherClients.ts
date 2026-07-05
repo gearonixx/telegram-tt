@@ -2,7 +2,7 @@ import { getGlobal, setGlobal } from '../../global';
 
 import { APP_CODE_NAME, INTERCLIENT_BROADCAST_CHANNEL } from '../../config';
 import { updateTabState } from '../../global/reducers/tabs';
-import { selectTabState } from '../../global/selectors';
+import { selectTabState } from '../../global/selectors/tabs';
 
 export default function listenOtherClients() {
   const channel = new BroadcastChannel(INTERCLIENT_BROADCAST_CHANNEL);
