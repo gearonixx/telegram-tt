@@ -6,13 +6,13 @@ import { RE_LINK_TEMPLATE, RE_MENTION_TEMPLATE } from '../../../config';
 import EMOJI_REGEX from '../../../lib/twemojiRegex';
 import { IS_EMOJI_SUPPORTED } from '../../../util/browser/windowEnvironment';
 import buildClassName from '../../../util/buildClassName';
-import { isDeepLink } from '../../../util/deepLinkParser';
 import {
   handleEmojiLoad,
   LOADED_EMOJIS,
   nativeToUnifiedExtendedWithCache,
 } from '../../../util/emoji/emoji';
 import fixNonStandardEmoji from '../../../util/emoji/fixNonStandardEmoji';
+import { isDeepLink } from '../../../util/isDeepLink';
 import { compact } from '../../../util/iteratees';
 
 import MentionLink from '../../middle/message/MentionLink';

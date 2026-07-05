@@ -7,9 +7,9 @@ import type { ActionReturnType, GlobalState, TabArgs } from '../../types';
 
 import { GLOBAL_SEARCH_SLICE, GLOBAL_TOPIC_SEARCH_SLICE } from '../../../config';
 import { timestampPlusDay } from '../../../util/dates/oldDateFormat';
-import { isDeepLink, tryParseDeepLink } from '../../../util/deepLinkParser';
 import { toChannelId } from '../../../util/entities/ids';
 import { getCurrentTabId } from '../../../util/establishMultitabRole';
+import { isDeepLink } from '../../../util/isDeepLink';
 import { getTranslationFn } from '../../../util/localization';
 import { formatStarsAsText } from '../../../util/localization/format';
 import { throttle } from '../../../util/schedulers';
@@ -265,6 +265,8 @@ async function searchMessagesGlobal<T extends GlobalState>(global: T, params: {
     });
 
     if (isDeepLink(query)) {
+      // Loaded on demand to keep the deep-link parser out of the boot-critical bundle
+      const { tryParseDeepLink } = await import('../../../util/deepLinkParser');
       const link = tryParseDeepLink(query);
       if (link?.type === 'publicMessageLink') {
         global = getGlobal();

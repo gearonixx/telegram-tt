@@ -15,7 +15,6 @@ import { ManagementProgress } from '../../../types';
 
 import { BOT_FATHER_USERNAME, GENERAL_REFETCH_INTERVAL } from '../../../config';
 import { copyTextToClipboard } from '../../../util/clipboard';
-import { getUsernameFromDeepLink } from '../../../util/deepLinkParser';
 import { getCurrentTabId } from '../../../util/establishMultitabRole';
 import { pick } from '../../../util/iteratees.ts';
 import { type AdvancedLangFnParameters, getTranslationFn } from '../../../util/localization';
@@ -1623,7 +1622,9 @@ addActionHandler('startBotFatherConversation', async (global, actions, payload):
 addActionHandler('loadBotFreezeAppeal', async (global): Promise<void> => {
   const botUrl = global.appConfig.freezeAppealUrl;
   if (!botUrl) return;
-  const botAppealUsername = botUrl ? getUsernameFromDeepLink(botUrl) : undefined;
+  // Loaded on demand to keep the deep-link parser out of the boot-critical bundle
+  const { getUsernameFromDeepLink } = await import('../../../util/deepLinkParser');
+  const botAppealUsername = getUsernameFromDeepLink(botUrl);
   if (!botAppealUsername) return;
   const chat = await fetchChatByUsername(global, botAppealUsername);
   global = getGlobal();

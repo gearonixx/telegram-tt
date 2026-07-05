@@ -44,8 +44,8 @@ import {
 import { ensureProtocol, isMixedScriptUrl } from '../../../util/browser/url';
 import { IS_IOS } from '../../../util/browser/windowEnvironment';
 import { copyTextToClipboardFromPromise } from '../../../util/clipboard';
-import { isDeepLink } from '../../../util/deepLinkParser';
 import { getCurrentTabId } from '../../../util/establishMultitabRole';
+import { isDeepLink } from '../../../util/isDeepLink';
 import {
   areSortedArraysIntersecting,
   buildCollectionByKey,

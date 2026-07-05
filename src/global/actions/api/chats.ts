@@ -34,11 +34,10 @@ import {
   TOPICS_SLICE_SECOND_LOAD,
 } from '../../../config';
 import { copyTextToClipboard } from '../../../util/clipboard';
-import { formatShareText, processDeepLink } from '../../../util/deeplink';
-import { isDeepLink } from '../../../util/deepLinkParser';
 import { isUserId } from '../../../util/entities/ids';
 import { getCurrentTabId } from '../../../util/establishMultitabRole';
 import { getOrderedIds } from '../../../util/folderManager';
+import { isDeepLink } from '../../../util/isDeepLink';
 import {
   buildCollectionByKey, omit, unique,
 } from '../../../util/iteratees';
@@ -1707,6 +1706,8 @@ addActionHandler('openTelegramLink', async (global, actions, payload): Promise<v
   } = actions;
 
   if (isDeepLink(url)) {
+    // Loaded on demand to keep the deep-link module out of the boot-critical bundle
+    const { processDeepLink } = await import('../../../util/deeplink');
     const isProcessed = processDeepLink(url, linkContext);
     if (isProcessed || url.match(RE_TG_LINK)) {
       return;
@@ -1783,6 +1784,7 @@ addActionHandler('openTelegramLink', async (global, actions, payload): Promise<v
   }
 
   if (part1 === 'share') {
+    const { formatShareText } = await import('../../../util/deeplink');
     const text = formatShareText(params.url, params.text);
     openChatWithDraft({ text, tabId });
     return;
