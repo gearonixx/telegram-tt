@@ -96,12 +96,7 @@ interface ComponentInstance {
     };
     effects?: {
       cursor: number;
-      byCursor: {
-        dependencies?: readonly unknown[];
-        schedule?: NoneToVoidFunction;
-        cleanup?: NoneToVoidFunction;
-        releaseSignals?: NoneToVoidFunction;
-      }[];
+      byCursor: EffectHookConfig[];
     };
     memos?: {
       cursor: number;
@@ -144,6 +139,17 @@ export type TeactNode =
 
 type Effect = () => (NoneToVoidFunction | void);
 type EffectCleanup = NoneToVoidFunction;
+
+// The config object is mutated in place across renders, so a re-render with
+// unchanged dependencies allocates nothing
+interface EffectHookConfig {
+  effect?: Effect;
+  isLayout?: boolean;
+  dependencies?: readonly unknown[];
+  schedule?: NoneToVoidFunction;
+  cleanup?: NoneToVoidFunction;
+  releaseSignals?: NoneToVoidFunction;
+}
 
 export type Context<T> = {
   defaultValue?: T;
@@ -370,21 +376,12 @@ let areImmediateEffectsCaptured = false;
   - Sibling behavior is not defined
 */
 function runEffectsMap<T extends NoneToVoidFunction>(map: Map<number, T>) {
+  // Effect ids are packed as `cursor - id * MAX_EFFECT_CURSORS_PER_INSTANCE`,
+  // so a plain ascending sort runs components child-to-parent (children have
+  // higher ids) and cursors in their declaration order
   Array.from(map.entries())
-    .sort(([aKey], [bKey]) => {
-      const idA = Math.floor(aKey / MAX_EFFECT_CURSORS_PER_INSTANCE);
-      const idB = Math.floor(bKey / MAX_EFFECT_CURSORS_PER_INSTANCE);
-
-      const idDiff = idB - idA;
-      if (idDiff !== 0) {
-        return idDiff;
-      }
-
-      const cursorA = aKey % MAX_EFFECT_CURSORS_PER_INSTANCE;
-      const cursorB = bKey % MAX_EFFECT_CURSORS_PER_INSTANCE;
-
-      return cursorA - cursorB;
-    }).forEach(([_, cb]) => void cb());
+    .sort(([aKey], [bKey]) => aKey - bKey)
+    .forEach(([_, cb]) => void cb());
 }
 
 /*
@@ -542,9 +539,7 @@ export function renderComponent(componentInstance: ComponentInstance) {
 }
 
 export function hasElementChanged($old: VirtualElement, $new: VirtualElement) {
-  if (typeof $old !== typeof $new) {
-    return true;
-  } else if ($old.type !== $new.type) {
+  if ($old.type !== $new.type) {
     return true;
   } else if ($old.type === VirtualType.Text && $new.type === VirtualType.Text) {
     return $old.value !== $new.value;
@@ -600,6 +595,7 @@ function helpGc(componentInstance: ComponentInstance) {
 
   if (effects) {
     for (const hook of effects.byCursor) {
+      hook.effect = undefined;
       hook.schedule = undefined;
       hook.cleanup = undefined;
       hook.releaseSignals = undefined;
@@ -739,68 +735,68 @@ function useEffectBase(
   const effectConfig = byCursor[cursor];
   const componentInstance = renderingInstance;
 
-  function schedule() {
-    scheduleEffect(componentInstance, cursor, effect, isLayout);
-  }
+  if (!effectConfig) {
+    const newConfig: EffectHookConfig = {
+      effect,
+      isLayout,
+      dependencies,
+    };
+    // The single stable closure reads the latest `effect` from the config at
+    // call time, so re-renders only need to update the config fields
+    newConfig.schedule = () => {
+      scheduleEffect(componentInstance, cursor, newConfig);
+    };
+    byCursor[cursor] = newConfig;
+    newConfig.releaseSignals = setupEffectSignals(newConfig, dependencies, debugKey);
 
-  if (dependencies && effectConfig?.dependencies) {
-    if (dependencies.some((dependency, i) => dependency !== effectConfig.dependencies![i])) {
-      if (DEBUG && debugKey) {
-        const causedBy = dependencies.reduce<string[]>((res, newValue, i) => {
-          const prevValue = effectConfig.dependencies![i];
-          if (newValue !== prevValue) {
-            res.push(`${i}: ${String(prevValue)} => ${String(newValue)}`);
-          }
-
-          return res;
-        }, []);
-
-        // eslint-disable-next-line no-console
-        console.log(`[Teact] Effect "${debugKey}" caused by dependencies.`, causedBy.join(', '));
-      }
-
-      schedule();
-    }
-  } else {
-    if (debugKey) {
+    if (debugKey && !dependencies) {
       // eslint-disable-next-line no-console
       console.log(`[Teact] Effect "${debugKey}" caused by missing dependencies.`);
     }
 
-    schedule();
-  }
+    newConfig.schedule();
+  } else {
+    const prevDependencies = effectConfig.dependencies;
+    effectConfig.effect = effect;
+    effectConfig.dependencies = dependencies;
+    effectConfig.schedule ??= () => {
+      scheduleEffect(componentInstance, cursor, effectConfig);
+    };
 
-  function setupSignals() {
-    const cleanups = dependencies?.filter(isSignal).map((signal, i) => signal.subscribe(() => {
+    if (dependencies && prevDependencies) {
+      let hasChanged = false;
+      for (let i = 0, l = dependencies.length; i < l; i++) {
+        if (dependencies[i] !== prevDependencies[i]) {
+          hasChanged = true;
+          break;
+        }
+      }
+
+      if (hasChanged) {
+        if (DEBUG && debugKey) {
+          const causedBy = dependencies.reduce<string[]>((res, newValue, i) => {
+            const prevValue = prevDependencies[i];
+            if (newValue !== prevValue) {
+              res.push(`${i}: ${String(prevValue)} => ${String(newValue)}`);
+            }
+
+            return res;
+          }, []);
+
+          // eslint-disable-next-line no-console
+          console.log(`[Teact] Effect "${debugKey}" caused by dependencies.`, causedBy.join(', '));
+        }
+
+        effectConfig.schedule();
+      }
+    } else {
       if (debugKey) {
         // eslint-disable-next-line no-console
-        console.log(`[Teact] Effect "${debugKey}" caused by signal #${i} new value:`, signal());
+        console.log(`[Teact] Effect "${debugKey}" caused by missing dependencies.`);
       }
 
-      byCursor[cursor].schedule!();
-    }));
-
-    if (!cleanups?.length) {
-      return undefined;
+      effectConfig.schedule();
     }
-
-    return () => {
-      for (const cleanup of cleanups) {
-        cleanup();
-      }
-    };
-  }
-
-  if (effectConfig) effectConfig.schedule = undefined; // Help GC
-
-  byCursor[cursor] = {
-    ...effectConfig,
-    dependencies,
-    schedule,
-  };
-
-  if (!effectConfig) {
-    byCursor[cursor].releaseSignals = setupSignals();
   }
 
   renderingInstance.hooks.effects.cursor++;
@@ -811,17 +807,54 @@ function useEffectBase(
   }
 }
 
+function setupEffectSignals(
+  effectConfig: EffectHookConfig,
+  dependencies: readonly unknown[] | undefined,
+  debugKey?: string,
+) {
+  if (!dependencies) {
+    return undefined;
+  }
+
+  let unsubscribes: NoneToVoidFunction[] | undefined;
+
+  for (const dependency of dependencies) {
+    if (!isSignal(dependency)) continue;
+
+    const signalIndex = unsubscribes ? unsubscribes.length : 0;
+    unsubscribes ??= [];
+    unsubscribes.push(dependency.subscribe(() => {
+      if (debugKey) {
+        // eslint-disable-next-line no-console
+        console.log(`[Teact] Effect "${debugKey}" caused by signal #${signalIndex} new value:`, dependency());
+      }
+
+      effectConfig.schedule!();
+    }));
+  }
+
+  if (!unsubscribes) {
+    return undefined;
+  }
+
+  const allUnsubscribes = unsubscribes;
+  return () => {
+    for (const unsubscribe of allUnsubscribes) {
+      unsubscribe();
+    }
+  };
+}
+
 function scheduleEffect(
   componentInstance: ComponentInstance,
   cursor: number,
-  effect: Effect,
-  isLayout: boolean,
+  effectConfig: EffectHookConfig,
 ) {
-  const { byCursor } = componentInstance.hooks!.effects!;
-  const cleanup = byCursor[cursor]?.cleanup;
+  const { isLayout, cleanup } = effectConfig;
   const cleanupsContainer = isLayout ? pendingLayoutCleanups : pendingCleanups;
   const effectsContainer = isLayout ? pendingLayoutEffects : pendingEffects;
-  const effectId = componentInstance.id * MAX_EFFECT_CURSORS_PER_INSTANCE + cursor;
+  // See `runEffectsMap` for the packing scheme
+  const effectId = cursor - componentInstance.id * MAX_EFFECT_CURSORS_PER_INSTANCE;
 
   if (cleanup) {
     const runEffectCleanup = () => safeExec(() => {
@@ -853,7 +886,7 @@ function scheduleEffect(
           componentInstance);
       },
       always: () => {
-        byCursor[cursor].cleanup = undefined;
+        effectConfig.cleanup = undefined;
       },
     });
 
@@ -870,9 +903,11 @@ function scheduleEffect(
       DEBUG_startAt = performance.now();
     }
 
-    const result = effect();
+    // Read at run time, so a re-render occurring between scheduling and the
+    // update pass provides the effect with its latest scope
+    const result = effectConfig.effect!();
     if (typeof result === 'function') {
-      byCursor[cursor].cleanup = result;
+      effectConfig.cleanup = result;
     }
 
     if (DEBUG) {
@@ -937,7 +972,8 @@ export function useMemo<T>(
   }
 
   const { cursor, byCursor } = renderingInstance.hooks.memos;
-  let { value } = byCursor[cursor] || {};
+  const memoConfig = byCursor[cursor];
+  let value = memoConfig ? memoConfig.value : undefined;
 
   let DEBUG_state: typeof DEBUG_memos[string] | undefined;
   if (DEBUG && debugHitRateKey) {
@@ -955,19 +991,27 @@ export function useMemo<T>(
     DEBUG_state.hitRate = (DEBUG_state.calls - DEBUG_state.misses) / DEBUG_state.calls;
   }
 
-  if (
-    byCursor[cursor] === undefined
-    || dependencies.length !== byCursor[cursor].dependencies.length
-    || dependencies.some((dependency, i) => dependency !== byCursor[cursor].dependencies[i])
-  ) {
+  let isMiss = memoConfig === undefined || dependencies.length !== memoConfig.dependencies.length;
+
+  if (!isMiss) {
+    const prevDependencies = memoConfig.dependencies;
+    for (let i = 0, l = dependencies.length; i < l; i++) {
+      if (dependencies[i] !== prevDependencies[i]) {
+        isMiss = true;
+        break;
+      }
+    }
+  }
+
+  if (isMiss) {
     if (DEBUG) {
       if (debugKey) {
         const msg = `[Teact.useMemo] ${renderingInstance.name} (${debugKey}): Update is caused by:`;
-        if (!byCursor[cursor]) {
+        if (!memoConfig) {
           // eslint-disable-next-line no-console
           console.log(`${msg} [first render]`);
         } else {
-          logUnequalProps(byCursor[cursor].dependencies, dependencies, msg, debugKey);
+          logUnequalProps(memoConfig.dependencies, dependencies, msg, debugKey);
         }
       }
 
@@ -992,10 +1036,15 @@ export function useMemo<T>(
     value = resolver();
   }
 
-  byCursor[cursor] = {
-    value,
-    dependencies,
-  };
+  if (memoConfig) {
+    memoConfig.value = value;
+    memoConfig.dependencies = dependencies;
+  } else {
+    byCursor[cursor] = {
+      value,
+      dependencies,
+    };
+  }
 
   renderingInstance.hooks.memos.cursor++;
 
@@ -1067,18 +1116,87 @@ export function useSignal<T>(initial?: T) {
 
 export function memo<T extends FC_withDebug>(Component: T, debugKey?: string) {
   function TeactMemoWrapper(props: Props) {
-    return useMemo(
-      () => createElement(Component, props),
-      // eslint-disable-next-line react-hooks-static-deps/exhaustive-deps
-      Object.values(props),
-      debugKey,
-      DEBUG_MORE ? DEBUG_resolveComponentName(renderingInstance.Component) : undefined,
-    );
+    const memoRef = useRef<{ props: Props; $element: ReturnType<typeof createElement> }>();
+
+    const prev = memoRef.current;
+    const isHit = prev !== undefined && arePropsShallowEqual(prev.props, props);
+
+    if (DEBUG) {
+      if (DEBUG_MORE) {
+        DEBUG_trackMemoHitRate(
+          `${DEBUG_resolveComponentName(renderingInstance.Component)}#${renderingInstance.id}`, !isHit,
+        );
+      }
+
+      if (debugKey && !isHit) {
+        const msg = `[Teact.memo] ${DEBUG_resolveComponentName(Component)} (${debugKey}): Update is caused by:`;
+        if (!prev) {
+          // eslint-disable-next-line no-console
+          console.log(`${msg} [first render]`);
+        } else {
+          logUnequalProps(prev.props, props, msg, debugKey);
+        }
+      }
+    }
+
+    if (isHit) {
+      return prev.$element;
+    }
+
+    const $element = createElement(Component, props);
+    memoRef.current = { props, $element };
+
+    return $element;
   }
 
   TeactMemoWrapper.DEBUG_contentComponentName = DEBUG_resolveComponentName(Component);
 
   return TeactMemoWrapper as T;
+}
+
+// Values are compared by key lookup rather than by `Object.values` index, so
+// the check allocates nothing and tolerates differing key order
+function arePropsShallowEqual(currentProps: Props, newProps: Props) {
+  let currentCount = 0;
+  for (const key in currentProps) {
+    if (!currentProps.hasOwnProperty(key)) continue;
+
+    currentCount++;
+    if (currentProps[key] !== newProps[key]) {
+      return false;
+    }
+  }
+
+  let newCount = 0;
+  for (const key in newProps) {
+    if (newProps.hasOwnProperty(key)) newCount++;
+  }
+
+  return currentCount === newCount;
+}
+
+function DEBUG_trackMemoHitRate(instanceKey: string, isMiss: boolean) {
+  let state = DEBUG_memos[instanceKey];
+  if (!state) {
+    state = {
+      key: instanceKey, calls: 0, misses: 0, hitRate: 0,
+    };
+    DEBUG_memos[instanceKey] = state;
+  }
+
+  state.calls++;
+  if (isMiss) state.misses++;
+  state.hitRate = (state.calls - state.misses) / state.calls;
+
+  if (
+    isMiss
+    && state.calls % 10 === 0
+    && state.calls >= DEBUG_MEMOS_CALLS_THRESHOLD
+    && state.hitRate < 0.25
+  ) {
+    // eslint-disable-next-line no-console
+    console.warn(`[Teact] ${state.key}: Hit rate is ${state.hitRate.toFixed(2)} for ${state.calls} calls`);
+  }
 }
 
 export function DEBUG_resolveComponentName(Component: FC_withDebug) {

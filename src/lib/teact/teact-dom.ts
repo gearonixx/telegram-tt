@@ -200,6 +200,17 @@ function renderWithVirtual<T extends VirtualElement | undefined>(
     remount(parentEl, $current, currentContext, undefined);
   } else if ($current && $new) {
     if (hasElementChanged($current, $new)) {
+      // Fast path: a changed text keeps its DOM node and updates the data in
+      // place, instead of a replace-remount of a freshly created node
+      if ($current.type === VirtualType.Text && $newAsReal.type === VirtualType.Text) {
+        const currentTarget = $current.target!;
+        currentTarget.nodeValue = $newAsReal.value;
+        $newAsReal.target = currentTarget;
+        $current.target = undefined; // Help GC
+
+        return $new;
+      }
+
       if (!nextSibling) {
         nextSibling = getNextSibling($current);
       }
@@ -526,6 +537,11 @@ function renderChildren(
     nextSibling || (lastCurrentChild ? getNextSibling(lastCurrentChild) : undefined)
   );
 
+  // Options do not vary between the children, so both objects are hoisted out
+  // of the loop (`renderWithVirtual` consumes them synchronously)
+  const keepOptions: RenderWithVirtualOptions = { nextSibling, forceMoveToEnd, namespace };
+  const appendOptions: RenderWithVirtualOptions | undefined = fragment ? { fragment, namespace } : undefined;
+
   for (let i = 0; i < maxLength; i++) {
     const $renderedChild = renderWithVirtual(
       currentEl,
@@ -534,7 +550,7 @@ function renderChildren(
       $new,
       currentContext,
       i,
-      i >= currentChildrenLength ? { fragment, namespace } : { nextSibling, forceMoveToEnd, namespace },
+      i >= currentChildrenLength ? appendOptions! : keepOptions,
     );
 
     if ($renderedChild && $renderedChild !== newChildren[i]) {
@@ -574,7 +590,7 @@ function renderFastListChildren(
 
   // Build a collection of old children that also remain in the new list
   let currentRemainingIndex = 0;
-  const remainingByKey: Record<keyof any, { $element: VirtualElement; index: number; orderKey?: number }> = {};
+  const remainingByKey = new Map<keyof any, { $element: VirtualElement; index: number; orderKey?: number }>();
   for (let i = 0, l = currentChildren.length; i < l; i++) {
     const $currentChild = currentChildren[i];
     const key = currentKeysByIndex[i];
@@ -587,11 +603,11 @@ function renderFastListChildren(
     }
 
     // Then we build up info about remaining children
-    remainingByKey[key] = {
+    remainingByKey.set(key, {
       $element: $currentChild,
       index: currentRemainingIndex++,
       orderKey: 'props' in $currentChild ? $currentChild.props.teactOrderKey : undefined,
-    };
+    });
   }
 
   let fragmentIndex: number | undefined;
@@ -599,10 +615,13 @@ function renderFastListChildren(
 
   let currentPreservedIndex = 0;
 
+  // Reused across iterations; `renderWithVirtual` consumes it synchronously
+  const options: RenderWithVirtualOptions = { namespace };
+
   for (let i = 0, l = newChildren.length; i < l; i++) {
     const $newChild = newChildren[i];
     const key = newKeysByIndex[i];
-    const currentChildInfo = remainingByKey[key];
+    const currentChildInfo = remainingByKey.get(key);
 
     if (!currentChildInfo) {
       if (fragmentSize === undefined) {
@@ -634,7 +653,8 @@ function renderFastListChildren(
     }
 
     const nextSibling = currentEl.childNodes[isMovingDown ? i + 1 : i];
-    const options: RenderWithVirtualOptions = { namespace };
+    options.nextSibling = undefined;
+    options.forceMoveToEnd = undefined;
     if (shouldMoveNode) {
       if (nextSibling) {
         options.nextSibling = nextSibling;
@@ -772,27 +792,27 @@ function updateAttributes(
 ) {
   processControlled(element.tagName, $new.props);
 
-  const currentEntries = Object.entries($current.props);
-  const newEntries = Object.entries($new.props);
+  const currentProps = $current.props;
+  const newProps = $new.props;
 
-  for (const [key, currentValue] of currentEntries) {
-    const newValue = $new.props[key];
+  // `for..in` keeps this hot path free of the `Object.entries` allocations
+  for (const key in currentProps) {
+    if (!currentProps.hasOwnProperty(key)) continue;
 
-    if (
-      currentValue !== undefined
-      && (
-        newValue === undefined
-        || (currentValue !== newValue && key.startsWith('on'))
-      )
-    ) {
+    const currentValue = currentProps[key];
+    if (currentValue === undefined) continue;
+
+    const newValue = newProps[key];
+    if (newValue === undefined || (currentValue !== newValue && key.startsWith('on'))) {
       removeAttribute(element, key, currentValue);
     }
   }
 
-  for (const [key, newValue] of newEntries) {
-    const currentValue = $current.props[key];
+  for (const key in newProps) {
+    if (!newProps.hasOwnProperty(key)) continue;
 
-    if (newValue !== undefined && newValue !== currentValue) {
+    const newValue = newProps[key];
+    if (newValue !== undefined && newValue !== currentProps[key]) {
       setAttribute(element, key, newValue, namespace);
     }
   }
