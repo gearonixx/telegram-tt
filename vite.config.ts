@@ -213,7 +213,9 @@ export default defineConfig(({ mode }): UserConfig => {
     },
     build: {
       sourcemap: true,
-      assetsInlineLimit: (filePath) => (IMAGE_ASSET_RE.test(filePath) ? false : undefined),
+      // Small `.tgs` files would otherwise be inlined as base64 into the chunks that import them
+      // (bloating the boot entry); as separate files they are only fetched when actually played
+      assetsInlineLimit: (filePath) => (IMAGE_ASSET_RE.test(filePath) || filePath.endsWith('.tgs') ? false : undefined),
     },
     worker: {
       plugins: shouldCollectWorkerReportBundles ? () => [
