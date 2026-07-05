@@ -19,9 +19,9 @@ import {
   selectWebApp,
 } from '../../../global/selectors';
 import { selectSharedSettings } from '../../../global/selectors/sharedState';
+import { getColorLuma } from '../../../util/advancedColors';
 import buildClassName from '../../../util/buildClassName';
 import buildStyle from '../../../util/buildStyle';
-import { getColorLuma } from '../../../util/colors';
 import windowSize from '../../../util/windowSize';
 
 import useInterval from '../../../hooks/schedulers/useInterval';

@@ -5,9 +5,9 @@ import type { ApiSticker } from '../../../api/types';
 
 import { requestMutation } from '../../../lib/fasterdom/fasterdom';
 import { getStickerMediaHash } from '../../../global/helpers';
+import { getColorLuma } from '../../../util/advancedColors.ts';
 import buildClassName from '../../../util/buildClassName';
 import buildStyle from '../../../util/buildStyle';
-import { getColorLuma } from '../../../util/colors.ts';
 import { preloadImage } from '../../../util/files';
 import { REM } from '../helpers/mediaDimensions';
 

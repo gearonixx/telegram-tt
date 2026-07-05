@@ -11,7 +11,7 @@ import { SettingsScreens, UPLOADING_WALLPAPER_SLUG } from '../../../types';
 
 import { DARK_THEME_PATTERN_COLOR, DEFAULT_PATTERN_COLOR } from '../../../config';
 import { selectTheme, selectThemeValues } from '../../../global/selectors';
-import { getAverageColor, getPatternColor } from '../../../util/colors';
+import { getAverageColor, getPatternColor } from '../../../util/advancedColors';
 import { validateFiles } from '../../../util/files';
 import { throttle } from '../../../util/schedulers';
 import { openSystemFilesDialog } from '../../../util/systemFilesDialog';

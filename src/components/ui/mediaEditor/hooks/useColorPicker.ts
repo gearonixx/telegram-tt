@@ -4,8 +4,8 @@ import Color from 'colorjs.io';
 import {
   buildColorFromHex,
   buildHexFromColor,
-  convertSrgbChannel,
-} from '../../../../util/colors';
+} from '../../../../util/advancedColors';
+import { convertSrgbChannel } from '../../../../util/colors';
 import getPointerPosition from '../../../../util/events/getPointerPosition';
 import { clamp } from '../../../../util/math';
 

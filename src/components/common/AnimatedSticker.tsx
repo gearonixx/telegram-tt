@@ -1,4 +1,3 @@
-import Color from 'colorjs.io';
 import type { ElementRef } from '../../lib/teact/teact';
 import {
   getIsHeavyAnimating,
@@ -16,6 +15,7 @@ import { ensureRLottie, getRLottie } from '../../lib/rlottie/RLottie.async';
 import { IS_TAURI } from '../../util/browser/globalEnvironment';
 import buildClassName from '../../util/buildClassName';
 import buildStyle from '../../util/buildStyle';
+import { parseCssColorToRgb } from '../../util/cssColor';
 import generateUniqueId from '../../util/generateUniqueId';
 
 import useColorFilter from '../../hooks/stickers/useColorFilter';
@@ -106,7 +106,7 @@ const AnimatedSticker = ({
   const playRef = useStateRef(play);
   const playSegmentRef = useStateRef(playSegment);
 
-  const colorRef = useRef<Color | undefined>();
+  const colorRef = useRef<[number, number, number] | undefined>();
 
   const shouldForceOnHeavyAnimation = forceAlways || forceOnHeavyAnimation;
   // Delay initialization until heavy animation ends
@@ -120,7 +120,7 @@ const AnimatedSticker = ({
 
   useSyncEffect(() => {
     if (color && !shouldUseColorFilter) {
-      colorRef.current = new Color(color);
+      colorRef.current = parseCssColorToRgb(color);
     } else {
       colorRef.current = undefined;
     }

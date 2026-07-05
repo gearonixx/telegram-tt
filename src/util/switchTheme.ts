@@ -1,11 +1,8 @@
-import Color from 'colorjs.io';
-
 import type { ThemeKey } from '../types';
 
 import { requestMutation } from '../lib/fasterdom/fasterdom';
 import themeColors from '../styles/themes.json';
 import { animate } from './animation';
-import { convertSrgbChannel } from './colors.ts';
 
 let isInitialized = false;
 
@@ -25,9 +22,29 @@ const DISABLE_ANIMATION_CSS = `
   transition: none !important;
 }`;
 
+// [r, g, b] in 0-255 plus alpha in 0-1
+type RgbaChannels = [number, number, number, number];
+
+const HEX_ALPHA_MAX = 255;
+
+// Theme colors are plain `#RGB[A]`/`#RRGGBB[AA]` literals from `themes.json`, so a local parser
+// is enough and keeps the heavy `colorjs.io` dependency out of the boot-critical bundle
+function parseHexColor(hex: string): RgbaChannels {
+  const value = hex.slice(1);
+  const isShort = value.length <= 4;
+  const digitsPerChannel = isShort ? 1 : 2;
+  const parseChannel = (index: number) => {
+    const channel = value.slice(index * digitsPerChannel, (index + 1) * digitsPerChannel);
+    return parseInt(isShort ? channel + channel : channel, 16);
+  };
+  const hasAlpha = value.length === 4 || value.length === 8;
+
+  return [parseChannel(0), parseChannel(1), parseChannel(2), hasAlpha ? parseChannel(3) / HEX_ALPHA_MAX : 1];
+}
+
 const colors = (Object.keys(themeColors) as Array<keyof typeof themeColors>).map((property) => ({
   property,
-  colors: [new Color(themeColors[property][0]), new Color(themeColors[property][1])],
+  colors: [parseHexColor(themeColors[property][0]), parseHexColor(themeColors[property][1])],
 }));
 
 const injectCss = (css: string) => {
@@ -92,10 +109,16 @@ function transition(t: number) {
 
 function applyColorAnimationStep(startIndex: number, endIndex: number, interpolationRatio: number = 1) {
   colors.forEach(({ property, colors: propertyColors }) => {
-    const color = propertyColors[startIndex].mix(propertyColors[endIndex], interpolationRatio, { space: 'srgb' });
-    const [r, g, b] = color.coords.map(convertSrgbChannel);
+    const start = propertyColors[startIndex];
+    const end = propertyColors[endIndex];
+    const mixed = start.map((channel, i) => channel + (end[i] - channel) * interpolationRatio) as RgbaChannels;
+    const [r, g, b] = [Math.round(mixed[0]), Math.round(mixed[1]), Math.round(mixed[2])];
+    const a = mixed[3];
 
-    document.documentElement.style.setProperty(property, color.toString({ format: 'rgb' }));
+    document.documentElement.style.setProperty(
+      property,
+      a < 1 ? `rgba(${r}, ${g}, ${b}, ${Number(a.toFixed(3))})` : `rgb(${r}, ${g}, ${b})`,
+    );
 
     if (RGB_VARIABLES.has(property)) {
       document.documentElement.style.setProperty(`${property}-rgb`, `${r},${g},${b}`);

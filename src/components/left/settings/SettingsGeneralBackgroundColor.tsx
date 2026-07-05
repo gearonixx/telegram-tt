@@ -8,14 +8,14 @@ import type { ThemeKey } from '../../../types';
 import type { RealTouchEvent } from '../../../util/captureEvents';
 
 import { selectTheme, selectThemeValues } from '../../../global/selectors';
-import buildClassName from '../../../util/buildClassName';
-import { captureEvents } from '../../../util/captureEvents';
 import {
   buildColorFromHex,
   buildHexFromColor,
-  convertSrgbChannel,
   getPatternColor,
-} from '../../../util/colors';
+} from '../../../util/advancedColors';
+import buildClassName from '../../../util/buildClassName';
+import { captureEvents } from '../../../util/captureEvents';
+import { convertSrgbChannel } from '../../../util/colors';
 
 import useFlag from '../../../hooks/useFlag';
 import useHistoryBack from '../../../hooks/useHistoryBack';

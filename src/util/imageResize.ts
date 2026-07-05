@@ -1,5 +1,3 @@
-import { getAverageColor, getColorLuma } from './colors';
-
 const LUMA_THRESHOLD = 240;
 
 export function scaleImage(image: string | Blob, ratio: number, outputType: string = 'image/png'): Promise<string> {
@@ -57,8 +55,7 @@ async function scale(
       if (bitmap.height !== height || bitmap.width !== width) {
         throw new Error('Image bitmap resize not supported!'); // FF93 added support for options, but not resize
       }
-      const averageColor = await getAverageColor(img.src);
-      const fillColor = getColorLuma(averageColor) < LUMA_THRESHOLD ? '#fff' : '#000';
+      const fillColor = await getContrastingFillColor(img.src);
       return await new Promise((res) => {
         const canvas = document.createElement('canvas');
         canvas.width = bitmap.width;
@@ -119,12 +116,19 @@ async function steppedScale(
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   }
 
-  const averageColor = await getAverageColor(img.src);
-  const fillColor = getColorLuma(averageColor) < LUMA_THRESHOLD ? '#fff' : '#000';
+  const fillColor = await getContrastingFillColor(img.src);
   ctx.fillStyle = fillColor;
   ctx.globalCompositeOperation = 'destination-over';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   return new Promise((resolve) => {
     canvas.toBlob(resolve, outputType);
   });
+}
+
+// `advancedColors` transitively pulls `colorjs.io`, so it is imported on demand
+// to keep attachment resizing helpers out of the boot-critical bundle
+async function getContrastingFillColor(url: string) {
+  const { getAverageColor, getColorLuma } = await import('./advancedColors');
+  const averageColor = await getAverageColor(url);
+  return getColorLuma(averageColor) < LUMA_THRESHOLD ? '#fff' : '#000';
 }

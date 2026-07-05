@@ -4,7 +4,7 @@ import type { ApiPeer } from '../api/types';
 import { ApiMediaFormat } from '../api/types';
 
 import { getChatAvatarHash } from '../global/helpers';
-import { getAverageColor } from '../util/colors';
+import { getAverageColor } from '../util/advancedColors';
 import useMedia from './useMedia';
 
 function useAverageColor(peer: ApiPeer, fallbackColor = '#00000000') {

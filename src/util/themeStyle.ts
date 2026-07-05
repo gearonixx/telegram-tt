@@ -1,6 +1,6 @@
-import Color from 'colorjs.io';
-
 import type { ApiThemeParameters } from '../api/types';
+
+import { parseCssColorToRgb } from './cssColor';
 
 const HEX_COLOR_LENGTH = 7;
 
@@ -75,11 +75,8 @@ export function getPropertyHexColor(style: CSSStyleDeclaration, property: string
 }
 
 export function prepareHexColor(color: string) {
-  try {
-    return new Color(color)
-      .toGamut({ space: 'srgb', method: 'clip' })
-      .toString({ format: 'hex', collapse: false, alpha: false });
-  } catch {
-    return undefined;
-  }
+  const rgb = parseCssColorToRgb(color);
+  if (!rgb) return undefined;
+
+  return `#${rgb.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
 }

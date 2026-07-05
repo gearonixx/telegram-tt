@@ -1,4 +1,3 @@
-import Color from 'colorjs.io';
 import type {
   ElementRef } from '../../../../lib/teact/teact';
 import {
@@ -13,6 +12,7 @@ import { requestMeasure } from '../../../../lib/fasterdom/fasterdom';
 import { ensureRLottie } from '../../../../lib/rlottie/RLottie.async';
 import { selectCustomEmoji, selectIsAlwaysHighPriorityEmoji } from '../../../../global/selectors';
 import AbsoluteVideo from '../../../../util/AbsoluteVideo';
+import { parseCssColorToRgb } from '../../../../util/cssColor';
 import {
   addCustomEmojiInputRenderCallback,
   getCustomEmojiMediaDataForInput,
@@ -230,7 +230,7 @@ async function createPlayer({
   colorFilter?: string;
 }): Promise<CustomEmojiPlayer> {
   if (customEmoji.isLottie) {
-    const color = customEmoji.shouldUseTextColor && textColor ? new Color(textColor) : undefined;
+    const color = customEmoji.shouldUseTextColor && textColor ? parseCssColorToRgb(textColor) : undefined;
     const RLottie = await ensureRLottie();
     const lottie = RLottie.init(
       mediaUrl,
