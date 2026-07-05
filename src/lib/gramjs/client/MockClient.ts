@@ -25,9 +25,14 @@ import MockSender from './MockSender';
 
 const sizeTypes: SizeType[] = ['u', 'v', 'w', 'y', 'd', 'x', 'c', 'm', 'b', 'a', 's', 'f'];
 
+type InvokeMiddleware = <A, R>(mockClient: TelegramClient, request: Api.Request<A, R>)
+=> Promise<R | undefined | 'pass'>;
+
+const INVOKE_MIDDLEWARES = import.meta.glob('./__invokeMiddlewares__/**/*.ts');
+const DATA_ASSETS = import.meta.glob('./__data__/*', { query: '?url', import: 'default' });
+
 class TelegramClient {
-  private invokeMiddleware?: <A, R>(mockClient: TelegramClient, request: Api.Request<A, R>)
-  => Promise<R | undefined | 'pass'>;
+  private invokeMiddleware?: InvokeMiddleware;
 
   public mockData: MockTypes = {
     users: [],
@@ -64,16 +69,22 @@ class TelegramClient {
 
   async loadScenario(scenario = 'default'): Promise<void> {
     try {
-      const invokeMiddleware = await import(/* @vite-ignore */ `./__invokeMiddlewares__/${scenario}`);
+      // `import.meta.glob` keeps these dynamic imports bundleable, so mocked
+      // scenarios also work in production builds (`@vite-ignore` paths 404
+      // once the sources are no longer served as-is)
+      const middlewareLoader = INVOKE_MIDDLEWARES[`./__invokeMiddlewares__/${scenario}.ts`]
+        || INVOKE_MIDDLEWARES[`./__invokeMiddlewares__/${scenario}/index.ts`];
+      const invokeMiddleware = await middlewareLoader?.();
 
-      this.invokeMiddleware = invokeMiddleware.default;
+      this.invokeMiddleware = (invokeMiddleware as { default: InvokeMiddleware })?.default;
     } catch (e) {
       // Ignore and use the default logic
     }
     return import(`./__mocks__/${scenario}.json`).then(async (mockData) => {
       this.mockData = mockData as MockTypes;
       await Promise.all(this.mockData.documents.map(async (l, i) => {
-        const response = await import(/* @vite-ignore */ `./__data__/${l.url}`).then((module) => fetch(module.default));
+        const assetUrl = await DATA_ASSETS[`./__data__/${l.url}`]() as string;
+        const response = await fetch(assetUrl);
         const bytes = await response.arrayBuffer();
         this.mockData.documents[i].size = BigInt(bytes.byteLength);
         this.mockData.documents[i].bytes = new Uint8Array(bytes);

@@ -24,8 +24,11 @@ import { chromium } from '@playwright/test';
 
 import { ensurePerfPhoto } from './gen-photo.mjs';
 
-const URL = process.argv[2] || 'http://localhost:1235/#mockScenario=perf';
+const URL = process.argv.find((arg) => arg.startsWith('http')) || 'http://localhost:1235/#mockScenario=perf';
+const IS_FULL = process.argv.includes('--full');
+const SCROLL_TARGET_MESSAGES = 300;
 const SCROLL_TARGET_MEDIA = 200;
+const VIEWER_CYCLES = 10;
 const MIN_REPORTED_BYTES = 2 * 1024 * 1024;
 const OUT_FILE = 'perf/out/memdump.json';
 
@@ -59,16 +62,34 @@ async function main() {
 
   await capture('S0', { page, cdp, browserCdp, browserPid });
 
+  if (IS_FULL) {
+    console.log('[memdump] scrolling the sticker channel');
+    await openChatByTitle(page, 'Perf Channel');
+    await scrollBack(page, SCROLL_TARGET_MESSAGES);
+  }
+
   console.log('[memdump] scrolling the photo channel');
   await openChatByTitle(page, 'Perf Media');
   await scrollBack(page, SCROLL_TARGET_MEDIA);
   await sleep(3000);
   await capture('S2m', { page, cdp, browserCdp, browserPid });
 
+  if (IS_FULL) {
+    console.log('[memdump] media viewer cycles');
+    await cycleMediaViewer(page, VIEWER_CYCLES);
+    await capture('S3', { page, cdp, browserCdp, browserPid });
+  }
+
   console.log('[memdump] back to the sticker channel, short idle');
   await openChatByTitle(page, 'Perf Channel');
   await sleep(30_000);
   await capture('S4lite', { page, cdp, browserCdp, browserPid });
+
+  if (IS_FULL) {
+    console.log('[memdump] long idle on the sticker channel');
+    await sleep(90_000);
+    await capture('S4long', { page, cdp, browserCdp, browserPid });
+  }
 
   console.log('[memdump] simulating critical memory pressure');
   await cdp.send('HeapProfiler.enable');
@@ -249,6 +270,20 @@ async function openChatByTitle(page, title) {
       .dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
   }, title);
   await sleep(2000);
+}
+
+async function cycleMediaViewer(page, cycles) {
+  for (let i = 0; i < cycles; i++) {
+    await page.evaluate((index) => {
+      const medias = [...document.querySelectorAll('.Message .media-inner canvas.full-media, .Message .media-inner img, .Message img.full-media, .Message .Photo img')];
+      const media = medias[index % medias.length];
+      media?.closest('.media-inner, .Photo')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }, i);
+    await page.waitForSelector('.MediaViewer', { timeout: 5000 }).catch(() => undefined);
+    await sleep(700);
+    await page.keyboard.press('Escape');
+    await sleep(500);
+  }
 }
 
 async function scrollBack(page, targetMessages) {

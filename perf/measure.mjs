@@ -367,14 +367,14 @@ async function scrollBack(page, targetMessages) {
 
 async function cycleMediaViewer(page, cycles) {
   const hasMedia = await page.evaluate(() => Boolean(
-    document.querySelector('.Message .media-inner img, .Message img.full-media, .Message .Photo img'),
+    document.querySelector('.Message .media-inner canvas.full-media, .Message .media-inner img, .Message img.full-media, .Message .Photo img'),
   ));
   if (!hasMedia) return false;
 
   for (let i = 0; i < cycles; i++) {
     // Cycle over different photos so every one is decoded at full size
     await page.evaluate((index) => {
-      const medias = [...document.querySelectorAll('.Message .media-inner img, .Message img.full-media, .Message .Photo img')];
+      const medias = [...document.querySelectorAll('.Message .media-inner canvas.full-media, .Message .media-inner img, .Message img.full-media, .Message .Photo img')];
       const media = medias[index % medias.length];
       media?.closest('.media-inner, .Photo')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     }, i);
