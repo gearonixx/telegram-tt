@@ -9,6 +9,11 @@ const TIMEOUT = 3000;
 // Emitted at build time by `createSwAssetManifestPlugin` in `vite.config.ts`
 const ASSET_MANIFEST_PATH = 'sw-asset-manifest.json';
 
+// Small unhashed root files referenced directly from `index.html` (a render-blocking
+// script, a compat check and the favicon). They never get a content hash, so they are
+// precached explicitly instead of through the hashed-asset manifest.
+const STATIC_ROOT_ASSETS = ['redirect.js', 'compatTest.js', 'favicon.ico'];
+
 type AssetManifest = {
   version: string;
   boot: string[];
@@ -27,6 +32,27 @@ export async function respondWithCacheNetworkFirst(e: FetchEvent) {
   });
 
   return remote;
+}
+
+// Serves a cached response immediately when available and refreshes the cache in the
+// background, so a warm reload never waits on the network for these but a new deploy
+// still lands within a visit or two
+export async function respondWithStaleWhileRevalidate(e: FetchEvent) {
+  const cache = await self.caches.open(ASSET_CACHE_NAME);
+  const cached = await cache.match(e.request);
+
+  const revalidate = fetch(e.request).then((remote) => {
+    if (remote.ok) cache.put(e.request, remote.clone());
+    return remote;
+  }).catch(() => undefined);
+
+  if (cached?.ok) {
+    e.waitUntil(revalidate);
+    return cached;
+  }
+
+  const remote = await revalidate;
+  return remote || cached || Response.error();
 }
 
 export async function respondWithCache(e: FetchEvent) {
@@ -77,10 +103,11 @@ async function withTimeout<T>(cb: () => Promise<T>, timeout: number) {
 // so a repeat visit renders the auth/main screen without touching the network
 export async function precacheBootAssets() {
   const manifest = await fetchAssetManifest();
-  if (!manifest?.boot.length) return;
+  const paths = [...(manifest?.boot || []), ...STATIC_ROOT_ASSETS];
+  if (!paths.length) return;
 
   const cache = await self.caches.open(ASSET_CACHE_NAME);
-  const urls = manifest.boot.map((path) => new URL(path, self.registration.scope).href);
+  const urls = paths.map((path) => new URL(path, self.registration.scope).href);
   const missing = (await Promise.all(
     urls.map(async (url) => ((await cache.match(url)) ? undefined : url)),
   )).filter(Boolean);

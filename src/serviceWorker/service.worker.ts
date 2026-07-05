@@ -2,6 +2,7 @@ import { DEBUG } from '../config';
 import { pause } from '../util/schedulers';
 import {
   precacheBootAssets, pruneAssetCache, respondWithCache, respondWithCacheNetworkFirst,
+  respondWithStaleWhileRevalidate,
 } from './assetCache';
 import { respondForDownload } from './download';
 import { respondForProgressive } from './progressive';
@@ -20,6 +21,9 @@ const RE_CACHE_FIRST_ASSETS = new RegExp(
   `(?:/assets/[^/]+|/(?:[^/]+\\.)?worker|/index)-[\\w-]{8}`
   + `\\.(${CACHE_FIRST_ASSET_EXTENSIONS})$`,
 );
+// Unhashed root files (render-blocking redirect script, compat check, favicon); revalidated
+// in the background instead of read-only cached so a deploy still lands eventually
+const RE_STALE_WHILE_REVALIDATE_ASSETS = /\/(?:redirect\.js|compatTest\.js|favicon\.ico)$/;
 const ACTIVATE_TIMEOUT = 3000;
 
 self.addEventListener('install', (e) => {
@@ -86,6 +90,11 @@ self.addEventListener('fetch', (e: FetchEvent) => {
 
     if (pathname.match(RE_CACHE_FIRST_ASSETS)) {
       e.respondWith(respondWithCache(e));
+      return true;
+    }
+
+    if (pathname.match(RE_STALE_WHILE_REVALIDATE_ASSETS)) {
+      e.respondWith(respondWithStaleWhileRevalidate(e));
       return true;
     }
   }
