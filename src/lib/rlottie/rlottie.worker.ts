@@ -56,6 +56,8 @@ async function init(
   const stringOnWasmHeap = allocate(intArrayFromString(json), 'i8', 0);
   const handle = rLottieApi.init();
   const framesCount = rLottieApi.loadFromData(handle, stringOnWasmHeap);
+  // rlottie parses the JSON into its own structures inside `loadFromData`; the input copy is not needed anymore
+  Module._free(stringOnWasmHeap);
   rLottieApi.resize(handle, imgSize, imgSize);
 
   const imageData = new ImageData(imgSize, imgSize);
@@ -83,6 +85,7 @@ async function changeData(
   const stringOnWasmHeap = allocate(intArrayFromString(json), 'i8', 0);
   const { handle } = renderers.get(key)!;
   const framesCount = rLottieApi.loadFromData(handle, stringOnWasmHeap);
+  Module._free(stringOnWasmHeap);
 
   const { reduceFactor, msPerFrame, reducedFramesCount } = calcParams(json, isLowPriority, framesCount);
 

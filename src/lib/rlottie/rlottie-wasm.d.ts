@@ -2,6 +2,7 @@ type RLottieWasmModule = {
   HEAPU8: Uint8Array;
   onRuntimeInitialized?: NoneToVoidFunction;
   cwrap: (ident: string, returnType: string, argTypes: string[]) => AnyFunction;
+  _free: (ptr: number) => void;
 };
 
 declare const Module: RLottieWasmModule;
