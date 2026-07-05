@@ -5,7 +5,6 @@ import { DEBUG, DEBUG_MORE, IS_TEST } from '../config';
 import serviceWorkerUrl from '../serviceWorker/service.worker.ts?worker&url';
 import { IS_ANDROID, IS_IOS, IS_SERVICE_WORKER_SUPPORTED } from './browser/windowEnvironment';
 import { validateFiles } from './files';
-import { notifyClientReady, playNotifySoundDebounced } from './notifications';
 
 type WorkerAction = {
   type: string;
@@ -31,7 +30,10 @@ function handleWorkerMessage(e: MessageEvent) {
       dispatch.focusMessage?.(payload as any);
       break;
     case 'playNotificationSound':
-      playNotifySoundDebounced(action.payload.id);
+      // Loaded on demand to keep the notification tree out of the boot-critical bundle
+      import('./notifications').then(({ playNotifySoundDebounced }) => {
+        playNotifySoundDebounced(action.payload.id);
+      });
       break;
     case 'share':
       // Loaded on demand to keep the deep-link parser out of the boot-critical bundle
@@ -49,7 +51,7 @@ function subscribeToWorker() {
   navigator.serviceWorker.removeEventListener('message', handleWorkerMessage);
   navigator.serviceWorker.addEventListener('message', handleWorkerMessage);
   // Notify web worker that client is ready to receive messages
-  notifyClientReady();
+  void import('./notifications').then(({ notifyClientReady }) => notifyClientReady());
 }
 
 if (IS_SERVICE_WORKER_SUPPORTED) {

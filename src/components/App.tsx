@@ -25,7 +25,7 @@ import { useSignalEffect } from '../hooks/useSignalEffect';
 import { getIsInBackground } from '../hooks/window/useBackgroundMode';
 
 import Auth from './auth/Auth';
-import Notifications from './common/Notifications';
+import Notifications from './common/Notifications.async';
 import UiLoader from './common/UiLoader';
 import AppInactive from './main/AppInactive';
 import LockScreen from './main/LockScreen.async';

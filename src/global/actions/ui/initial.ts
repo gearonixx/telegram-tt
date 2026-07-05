@@ -13,7 +13,6 @@ import {
 import { getCurrentTabId } from '../../../util/establishMultitabRole';
 import generateUniqueId from '../../../util/generateUniqueId';
 import { setTimeFormat as setLocalizedTimeFormat } from '../../../util/localization';
-import { subscribe, unsubscribe } from '../../../util/notifications';
 import { oldSetLanguage } from '../../../util/oldLangProvider';
 import { decryptSessionByCurrentHash } from '../../../util/passcode';
 import { applyPerformanceSettings } from '../../../util/perfomanceSettings';
@@ -62,7 +61,8 @@ addActionHandler('switchMultitabRole', async (global, actions, payload): Promise
   setGlobal(global, { forceSyncOnIOs: true });
 
   if (!isMasterTab) {
-    void unsubscribe();
+    // Loaded on demand to keep the notification tree out of the boot-critical bundle
+    void import('../../../util/notifications').then(({ unsubscribe }) => unsubscribe());
     actions.destroyConnection();
     stopWebsync();
     destroySharedStatePort();
@@ -118,7 +118,7 @@ addActionHandler('initMain', (global): ActionReturnType => {
     // Most of the browsers only show the notifications permission prompt after the first user gesture.
     const events = ['click', 'keypress'];
     const subscribeAfterUserGesture = () => {
-      void subscribe();
+      void import('../../../util/notifications').then(({ subscribe }) => subscribe());
       events.forEach((event) => {
         document.removeEventListener(event, subscribeAfterUserGesture);
       });
