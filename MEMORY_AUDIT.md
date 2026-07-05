@@ -309,7 +309,7 @@ the rest is Chromium's discardable image cache from the photo scroll, see
 §5); and **207 MB** for the identical end state after a reload, which is
 the number the engineering in §6.4 moves toward the floor.
 
-### 6.4 Roadmap to the floor (ranked, not implemented)
+### 6.4 Roadmap to the floor (ranked; items marked ✅ have since landed)
 
 1. **Render in the worker onto `OffscreenCanvas`**
    (`transferControlToOffscreen`): frames never become main-thread
@@ -319,18 +319,27 @@ the number the engineering in §6.4 moves toward the floor.
    minimum. Large refactor: `RLottie`, `AnimatedSticker`, and the shared
    canvas custom-emoji path (multiple sprites per canvas) must move their
    draw loops worker-side.
-2. **`ImageBitmapRenderingContext` for standalone stickers**:
-   `transferFromImageBitmap` hands the bitmap to the compositor and frees
-   the 2D backing store (measured 10–15 MB per viewport). Consumes the
-   bitmap, so it pairs with the bounded window, not with full-loop caching;
-   shared canvases can't use it.
+2. ✅ **`ImageBitmapRenderingContext` for standalone stickers** — landed as
+   `[Perf] RLottie: Hand frames to the compositor via bitmaprenderer
+   canvases`: one view per animation transfers frames to the compositor (no
+   2D backing store, no main-thread raster); consumed slots use a sentinel
+   and re-render on the next loop pass; shared canvases and extra views keep
+   `drawImage`. Verified visually and via frame counters (steady 273
+   frames / 5.2 MB with a sticker viewport animating). The full-scenario
+   re-measurement (`after-bitmap.json`) has clean S0/S1 checkpoints —
+   boot renderer PSS 178 MB with zero media workers spawned — but its
+   S2–S4 checkpoints were invalidated by dev-server HMR reloads from
+   concurrent edits; re-run on a quiet tree (or against a production
+   `build:mocked` once mocked scenarios are bundleable) before quoting
+   steady-state numbers for this change.
 3. **WebCodecs `VideoFrame` frames**: GPU-backed, explicitly closeable —
    decoded pixels move from renderer PSS to the GPU process and become
    evictable texture memory.
-4. **Rebuild rlottie with `-msimd128`** (and optionally threads): 2–4×
-   rasterization throughput buys the CPU budget to shrink
-   `BOUNDED_CACHE_WINDOW` toward 1–2 even on dense viewports — trading the
-   last tens of cache MB for compute the SIMD units provide for free.
+4. ✅ *(partially)* **Rebuild rlottie with SIMD** — landed as the from-source
+   TG-fork rebuild (bit-exact, `-msse2 -msimd128` kernels + SIMD BGRA→RGBA
+   conversion, +9–28 % measured). The remaining 2–4× requires vectorizing
+   rlottie's scalar span/cell rasterizer itself (44 % of render time in the
+   V8 tick profile) — upstream-scale work.
 5. **Lazy media workers** (rank 7 in §4) and **lazy fastText init**: both
    done — fastText initializes on the first `detectLanguage` call
    (session 4), and media workers spawn per index on first use (§8), so
