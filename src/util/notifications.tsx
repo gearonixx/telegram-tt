@@ -42,8 +42,6 @@ import { oldTranslate } from './oldLangProvider';
 import { debounce } from './schedulers';
 import { getServerTime } from './serverTime';
 
-import MessageSummary from '../components/common/MessageSummary';
-
 function getDeviceToken(subscription: PushSubscription) {
   const data = subscription.toJSON();
   return JSON.stringify({
@@ -108,17 +106,27 @@ const expirationTime = 12 * 60 * 60 * 1000; // 12 hours
 // Notification id is removed from soundPlayed cache after 3 seconds
 const soundPlayedDelay = 3 * 1000;
 const soundPlayedIds = new Set<string>();
-const notificationSound = new Audio('./notification.mp3');
-notificationSound.setAttribute('mozaudiochannel', 'notification');
+// Creating the element eagerly would fetch the sound file while the app is still booting
+let notificationSound: HTMLAudioElement | undefined;
+
+function getNotificationSound() {
+  if (!notificationSound) {
+    notificationSound = new Audio('./notification.mp3');
+    notificationSound.setAttribute('mozaudiochannel', 'notification');
+  }
+
+  return notificationSound;
+}
 
 export async function playNotifySound(id?: string, volume?: number) {
   if (id !== undefined && soundPlayedIds.has(id)) return;
   const { notificationSoundVolume } = selectSettingsKeys(getGlobal());
   const currentVolume = volume ? volume / 10 : notificationSoundVolume / 10;
   if (currentVolume === 0) return;
-  notificationSound.volume = currentVolume;
+  const sound = getNotificationSound();
+  sound.volume = currentVolume;
   if (id !== undefined) {
-    notificationSound.addEventListener('ended', () => {
+    sound.addEventListener('ended', () => {
       soundPlayedIds.add(id);
     }, { once: true });
 
@@ -128,7 +136,7 @@ export async function playNotifySound(id?: string, volume?: number) {
   }
 
   try {
-    await notificationSound.play();
+    await sound.play();
   } catch (error) {
     if (DEBUG) {
       // eslint-disable-next-line no-console
@@ -318,7 +326,7 @@ function checkIfShouldNotify(chat: ApiChat, message: Partial<ApiMessage>) {
   return !document.hasFocus();
 }
 
-function getNotificationContent(chat: ApiChat, message: ApiMessage, reaction?: ApiPeerReaction) {
+async function getNotificationContent(chat: ApiChat, message: ApiMessage, reaction?: ApiPeerReaction) {
   const global = getGlobal();
   let sender = selectSender(global, message);
   const hasReaction = Boolean(reaction);
@@ -335,6 +343,8 @@ function getNotificationContent(chat: ApiChat, message: ApiMessage, reaction?: A
     && getShouldShowMessagePreview(chat, selectNotifyDefaults(global), selectNotifyException(global, chat.id))
   ) {
     const senderName = sender ? getMessageSenderName(getTranslationFn(), chat.id, sender) : undefined;
+    // Loaded on demand to keep the message-preview render tree out of the boot bundle
+    const { default: MessageSummary } = await import('../components/common/MessageSummary');
     let summary = jsxToHtml(<span><MessageSummary message={message} /></span>)[0].textContent || '';
 
     if (hasReaction) {
@@ -454,7 +464,7 @@ export async function notifyAboutMessage({
   const {
     title,
     body,
-  } = getNotificationContent(chat, message as ApiMessage, activeReaction);
+  } = await getNotificationContent(chat, message as ApiMessage, activeReaction);
 
   if (checkIfPushSupported()) {
     if (navigator.serviceWorker?.controller) {
