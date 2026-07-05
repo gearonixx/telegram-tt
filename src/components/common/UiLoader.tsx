@@ -6,7 +6,7 @@ import type { TabState } from '../../global/types';
 import { ApiMediaFormat } from '../../api/types';
 
 import { FOLDERS_POSITION_LEFT } from '../../config';
-import { getChatAvatarHash } from '../../global/helpers/chats'; // Direct import for better module splitting
+import { getChatAvatarHash } from '../../global/helpers/avatar'; // Direct import for better module splitting
 import { selectAreFoldersPresent, selectIsRightColumnShown, selectTabState } from '../../global/selectors';
 import { selectSharedSettings } from '../../global/selectors/sharedState';
 import buildClassName from '../../util/buildClassName';

@@ -98,22 +98,7 @@ export function getChatLink(chat: ApiChat) {
   return activeUsername ? `${TME_LINK_PREFIX}${activeUsername}` : undefined;
 }
 
-export function getChatAvatarHash(
-  owner: ApiPeer,
-  size: 'normal' | 'big' = 'normal',
-  avatarPhotoId = owner.avatarPhotoId,
-) {
-  if (!avatarPhotoId) {
-    return undefined;
-  }
-
-  switch (size) {
-    case 'big':
-      return `profile${owner.id}?${avatarPhotoId}`;
-    default:
-      return `avatar${owner.id}?${avatarPhotoId}`;
-  }
-}
+export { getChatAvatarHash } from './avatar';
 
 export function isChatAdmin(chat: ApiChat) {
   return Boolean(chat.adminRights || chat.isCreator);

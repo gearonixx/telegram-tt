@@ -14,7 +14,9 @@ import { getCurrentTabId } from '../../util/establishMultitabRole';
 import {
   areSortedArraysEqual, areSortedArraysIntersecting, omit, unique,
 } from '../../util/iteratees';
-import { buildChatThreadKey, isMediaLoadableInViewer } from '../helpers';
+// Direct imports keep the whole helpers barrel out of the boot bundle
+import { isMediaLoadableInViewer } from '../helpers/messageMedia';
+import { buildChatThreadKey } from '../helpers/middleSearch';
 import { selectTabState } from '../selectors';
 import { selectChatMediaSearch } from '../selectors/middleSearch';
 import { updateTabState } from './tabs';

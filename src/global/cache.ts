@@ -28,7 +28,6 @@ import {
 } from '../config';
 import { MAIN_IDB_STORE } from '../util/browser/idb';
 import { isUserId } from '../util/entities/ids';
-import { getOrderedIds } from '../util/folderManager';
 import {
   compact, pick, pickTruthy, unique,
 } from '../util/iteratees';
@@ -62,6 +61,17 @@ let isCaching = false;
 let isRemovingCache = false;
 let cacheUpdateSuspensionTimestamp = 0;
 let unsubscribeFromBeforeUnload: NoneToVoidFunction | undefined;
+
+// Loaded on demand: the folder manager is only needed for cache writes (which
+// require a session), and the cache write on unload must stay synchronous
+let getFolderOrderedIds: typeof import('../util/folderManager').getOrderedIds | undefined;
+
+function ensureFolderManager() {
+  if (getFolderOrderedIds) return;
+  void import('../util/folderManager').then((folderManager) => {
+    getFolderOrderedIds = folderManager.getOrderedIds;
+  });
+}
 
 export function cacheGlobal(global: GlobalState) {
   return MAIN_IDB_STORE.set(GLOBAL_STATE_CACHE_KEY, global);
@@ -141,6 +151,7 @@ export async function loadCache(initialState: GlobalState): Promise<GlobalState 
 
 export function setupCaching() {
   isCaching = true;
+  ensureFolderManager();
   unsubscribeFromBeforeUnload = onBeforeUnload(updateCacheForced, true);
   window.addEventListener('blur', updateCacheForced);
   addCallback(updateCacheThrottled);
@@ -579,8 +590,9 @@ function reduceUsers<T extends GlobalState>(global: T): GlobalState['users'] {
     ...attachBotIds,
     ...topPeerIds.filter(isUserId),
     ...global.recentlyFoundChatIds?.filter(isUserId) || [],
-    ...getOrderedIds(ARCHIVED_FOLDER_ID)?.slice(0, GLOBAL_STATE_CACHE_ARCHIVED_CHAT_LIST_LIMIT).filter(isUserId) || [],
-    ...getOrderedIds(ALL_FOLDER_ID)?.filter(isUserId) || [],
+    ...getFolderOrderedIds?.(ARCHIVED_FOLDER_ID)
+      ?.slice(0, GLOBAL_STATE_CACHE_ARCHIVED_CHAT_LIST_LIMIT).filter(isUserId) || [],
+    ...getFolderOrderedIds?.(ALL_FOLDER_ID)?.filter(isUserId) || [],
     ...global.contactList?.userIds || [],
     ...Object.keys(byId),
   ]).slice(0, GLOBAL_STATE_CACHE_USER_LIST_LIMIT);
@@ -626,9 +638,9 @@ function reduceChats<T extends GlobalState>(global: T): GlobalState['chats'] {
     ...messagesChatIds,
     ...topPeerIds,
     ...global.recentlyFoundChatIds || [],
-    ...getOrderedIds(ARCHIVED_FOLDER_ID)?.slice(0, GLOBAL_STATE_CACHE_ARCHIVED_CHAT_LIST_LIMIT) || [],
-    ...getOrderedIds(ALL_FOLDER_ID) || [],
-    ...getOrderedIds(SAVED_FOLDER_ID) || [],
+    ...getFolderOrderedIds?.(ARCHIVED_FOLDER_ID)?.slice(0, GLOBAL_STATE_CACHE_ARCHIVED_CHAT_LIST_LIMIT) || [],
+    ...getFolderOrderedIds?.(ALL_FOLDER_ID) || [],
+    ...getFolderOrderedIds?.(SAVED_FOLDER_ID) || [],
     ...Object.keys(byId),
   ];
 
@@ -698,8 +710,8 @@ function reduceMessages<T extends GlobalState>(global: T): GlobalState['messages
     ...currentChatIds,
     ...currentUserId ? [currentUserId] : [],
     ...forumPanelChatIds,
-    ...getOrderedIds(ALL_FOLDER_ID) || [],
-    ...getOrderedIds(ARCHIVED_FOLDER_ID)?.slice(0, GLOBAL_STATE_CACHE_ARCHIVED_CHAT_LIST_LIMIT) || [],
+    ...getFolderOrderedIds?.(ALL_FOLDER_ID) || [],
+    ...getFolderOrderedIds?.(ARCHIVED_FOLDER_ID)?.slice(0, GLOBAL_STATE_CACHE_ARCHIVED_CHAT_LIST_LIMIT) || [],
   ]);
 
   const openedChatThreadIds = Object.values(global.byTabId).reduce((acc, { id: tabId }) => {
