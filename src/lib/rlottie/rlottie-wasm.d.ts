@@ -1,5 +1,5 @@
 type RLottieWasmModule = {
-  HEAPU8: Uint8Array;
+  HEAPU8: Uint8Array<ArrayBuffer>;
   onRuntimeInitialized?: NoneToVoidFunction;
   cwrap: (ident: string, returnType: string, argTypes: string[]) => AnyFunction;
   _free: (ptr: number) => void;

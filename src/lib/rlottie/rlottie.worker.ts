@@ -28,7 +28,6 @@ const renderers = new Map<string, {
   imgSize: number;
   reduceFactor: number;
   handle: any;
-  imageData: ImageData;
   customColor?: [number, number, number];
 }>();
 
@@ -36,7 +35,7 @@ if (DEBUG) {
   (globalThis as any).__rlottieWasmStats = () => ({
     wasmHeapBytes: Module.HEAPU8?.length,
     renderers: renderers.size,
-    rendererImageDataBytes: Array.from(renderers.values()).reduce((sum, r) => sum + r.imageData.data.length, 0),
+    rendererImageDataBytes: 0,
   });
 }
 
@@ -60,12 +59,10 @@ async function init(
   Module._free(stringOnWasmHeap);
   rLottieApi.resize(handle, imgSize, imgSize);
 
-  const imageData = new ImageData(imgSize, imgSize);
-
   const { reduceFactor, msPerFrame, reducedFramesCount } = calcParams(json, isLowPriority, framesCount);
 
   renderers.set(key, {
-    imgSize, reduceFactor, handle, imageData, customColor,
+    imgSize, reduceFactor, handle, customColor,
   });
 
   onInit(reduceFactor, msPerFrame, reducedFramesCount);
@@ -132,21 +129,26 @@ async function renderFrames(
   }
 
   const {
-    imgSize, reduceFactor, handle, imageData, customColor,
+    imgSize, reduceFactor, handle, customColor,
   } = renderers.get(key)!;
 
   const realIndex = frameIndex * reduceFactor;
 
   rLottieApi.render(handle, realIndex);
   const bufferPointer = rLottieApi.buffer(handle);
-  const data = Module.HEAPU8.subarray(bufferPointer, bufferPointer + (imgSize * imgSize * 4));
+  const byteLength = imgSize * imgSize * 4;
 
+  let imageData: ImageData;
   if (customColor) {
-    const arr = new Uint8ClampedArray(data);
+    const arr = new Uint8ClampedArray(Module.HEAPU8.subarray(bufferPointer, bufferPointer + byteLength));
     applyColor(arr, customColor);
-    imageData.data.set(arr);
+    imageData = new ImageData(arr, imgSize, imgSize);
   } else {
-    imageData.data.set(data);
+    // Zero-copy view into the rlottie output buffer on the WASM heap.
+    // `createImageBitmap` snapshots the pixels synchronously, before the buffer can be overwritten or detached
+    imageData = new ImageData(
+      new Uint8ClampedArray(Module.HEAPU8.buffer, bufferPointer, byteLength), imgSize, imgSize,
+    );
   }
 
   const imageBitmap = await createImageBitmap(imageData);
