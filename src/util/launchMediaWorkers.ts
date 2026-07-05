@@ -7,27 +7,30 @@ import { createConnector } from './PostMessageConnector';
 
 export const MAX_WORKERS = Math.min(navigator.hardwareConcurrency || 4, 4);
 
-let instances: {
+type MediaWorkerInstance = {
   worker: Worker;
   connector: Connector<MediaWorkerApi>;
-}[] | undefined;
+};
 
-export default function launchMediaWorkers() {
+// Workers are spawned individually on first use: launching the whole fleet at once would
+// pay 4 worker boots (each instantiating its own WASM heap) for the first tiny animation
+const instances: (MediaWorkerInstance | undefined)[] = new Array(MAX_WORKERS);
+
+function launchMediaWorker(index: number) {
   // Unit tests run without `Worker`; browser-based test runs (mocked client) need real media workers
-  if (IS_TEST && typeof Worker === 'undefined') return [];
-  if (!instances) {
-    instances = new Array(MAX_WORKERS).fill(undefined).map(
-      () => {
-        const worker = new Worker(new URL('../lib/mediaWorker/index.worker.ts', import.meta.url), { type: 'module' });
-        const connector = createConnector<MediaWorkerApi>(worker, undefined, 'media');
-        return { worker, connector };
-      },
-    );
+  if (IS_TEST && typeof Worker === 'undefined') return undefined!;
+
+  let instance = instances[index];
+  if (!instance) {
+    const worker = new Worker(new URL('../lib/mediaWorker/index.worker.ts', import.meta.url), { type: 'module' });
+    const connector = createConnector<MediaWorkerApi>(worker, undefined, 'media');
+    instance = { worker, connector };
+    instances[index] = instance;
   }
 
-  return instances;
+  return instance;
 }
 
 export function requestMediaWorker(payload: Parameters<Connector<MediaWorkerApi>['request']>[0], index: number) {
-  return launchMediaWorkers()[index].connector.request(payload);
+  return launchMediaWorker(index).connector.request(payload);
 }

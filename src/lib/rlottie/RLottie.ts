@@ -6,7 +6,7 @@ import {
 import cycleRestrict from '../../util/cycleRestrict';
 import Deferred from '../../util/Deferred';
 import generateUniqueId from '../../util/generateUniqueId';
-import launchMediaWorkers, { MAX_WORKERS } from '../../util/launchMediaWorkers';
+import { MAX_WORKERS, requestMediaWorker } from '../../util/launchMediaWorkers';
 import { requestMeasure, requestMutation } from '../fasterdom/fasterdom';
 
 interface Params {
@@ -37,7 +37,6 @@ const FRAME_CACHE_GLOBAL_BUDGET_BYTES = 32 * 1024 * 1024;
 const BOUNDED_CACHE_WINDOW = 5;
 const CANVAS_CLASS = 'rlottie-canvas';
 
-const workers = launchMediaWorkers().map(({ connector }) => connector);
 const instancesByRenderId = new Map<string, RLottie>();
 
 const frameStats = { count: 0, bytes: 0 };
@@ -414,7 +413,7 @@ class RLottie {
   private initRenderer() {
     this.workerIndex = cycleRestrict(MAX_WORKERS, ++lastWorkerIndex);
 
-    workers[this.workerIndex].request({
+    requestMediaWorker({
       name: 'rlottie:init',
       args: [
         this.renderId,
@@ -424,14 +423,14 @@ class RLottie {
         this.customColor,
         this.onRendererInit.bind(this),
       ],
-    });
+    }, this.workerIndex);
   }
 
   private destroyRenderer() {
-    workers[this.workerIndex].request({
+    requestMediaWorker({
       name: 'rlottie:destroy',
       args: [this.renderId],
-    });
+    }, this.workerIndex);
   }
 
   private onRendererInit(reduceFactor: number, msPerFrame: number, framesCount: number) {
@@ -451,7 +450,7 @@ class RLottie {
     this.tgsUrl = tgsUrl;
     this.initConfig();
 
-    workers[this.workerIndex].request({
+    requestMediaWorker({
       name: 'rlottie:changeData',
       args: [
         this.renderId,
@@ -459,7 +458,7 @@ class RLottie {
         this.params.isLowPriority || false,
         this.onChangeData.bind(this),
       ],
-    });
+    }, this.workerIndex);
   }
 
   private onChangeData(reduceFactor: number, msPerFrame: number, framesCount: number) {
@@ -628,10 +627,10 @@ class RLottie {
   private requestFrame(frameIndex: number) {
     this.frames[frameIndex] = WAITING;
 
-    workers[this.workerIndex].request({
+    requestMediaWorker({
       name: 'rlottie:renderFrames',
       args: [this.renderId, frameIndex, this.onFrameLoad.bind(this)],
-    });
+    }, this.workerIndex);
   }
 
   private cleanupPrevFrame(frameIndex: number) {
