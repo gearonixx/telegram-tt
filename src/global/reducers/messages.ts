@@ -24,13 +24,20 @@ import {
 } from '../../util/iteratees';
 import { isLocalMessageId, type MessageKey } from '../../util/keys/messageKey';
 import { unload } from '../../util/mediaLoader';
-import { getAllMessageMediaHashes, isMediaLoadableInViewer } from '../helpers/messageMedia';
-import { getMessageStatefulContent, groupMessageIdsByThreadId, hasMessageTtl, mergeIdRanges, orderHistoryIds, orderPinnedIds } from '../helpers/messages';
 import { getEmojiOnlyCountForMessage } from '../helpers/getEmojiOnlyCountForMessage';
-import { selectChatMessage, selectChatMessages, selectChatScheduledMessages, selectCurrentMessageIds, selectCurrentMessageList, selectListedIds, selectMessageIdsByGroupId, selectOutlyingLists, selectPinnedIds, selectPoll, selectQuickReplyMessage, selectScheduledMessage, selectViewportIds, selectWebPage } from '../selectors/messages';
+import { getAllMessageMediaHashes, isMediaLoadableInViewer } from '../helpers/messageMedia';
+import {
+  getMessageStatefulContent, groupMessageIdsByThreadId, hasMessageTtl, mergeIdRanges, orderHistoryIds, orderPinnedIds,
+} from '../helpers/messages';
+import {
+  selectChatMessage, selectChatMessages, selectChatScheduledMessages, selectCurrentMessageIds, selectCurrentMessageList,
+  selectListedIds, selectMessageIdsByGroupId, selectOutlyingLists, selectPinnedIds, selectPoll, selectQuickReplyMessage,
+  selectScheduledMessage, selectViewportIds, selectWebPage,
+} from '../selectors/messages';
 import { selectTabState } from '../selectors/tabs';
 import { selectThreadIdFromMessage, selectThreadInfo, selectThreadLocalStateParam } from '../selectors/threads';
 import { removeUnreadMentions } from './chats';
+import { updateMessageStore } from './messageStore';
 import { removeIdFromSearchResults } from './middleSearch';
 import { removeUnreadPollVotes } from './polls';
 import { removeUnreadReactions } from './reactions';
@@ -41,7 +48,6 @@ import {
   replaceThreadLocalStateParam,
   updateThreadInfoMessagesCount,
 } from './threads';
-import { updateMessageStore } from './messageStore';
 import { clearMessageSummary, clearMessageTranslation } from './translations';
 
 export { updateMessageStore } from './messageStore';

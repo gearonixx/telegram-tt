@@ -19,10 +19,10 @@ import {
 } from '../../index';
 import { replaceSettings, updateSharedSettings, updateThemeSettings } from '../../reducers/settings';
 import { updateTabState } from '../../reducers/tabs';
-import { selectCanAnimateInterface } from '../../selectors/ui';
 import { selectChatFolder } from '../../selectors/chats';
-import { selectTabState } from '../../selectors/tabs';
 import { selectSharedSettings } from '../../selectors/sharedState';
+import { selectTabState } from '../../selectors/tabs';
+import { selectCanAnimateInterface } from '../../selectors/ui';
 
 let prevGlobal: GlobalState | undefined;
 

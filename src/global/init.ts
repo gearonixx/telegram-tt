@@ -12,6 +12,7 @@ import { updatePeerColors } from '../util/theme';
 import { initializeChatMediaSearchResults } from './reducers/chatMediaSearch';
 import { updateTabState } from './reducers/tabs';
 import { replaceTabThreadParam, replaceThreadLocalStateParam } from './reducers/threadParams';
+import { selectTabState } from './selectors/tabs';
 import { selectThreadLocalStateParam } from './selectors/threads';
 import { initSharedState } from './shared/sharedStateConnector';
 import { initCache } from './cache';
@@ -19,7 +20,6 @@ import {
   addActionHandler, getGlobal, setGlobal,
 } from './index';
 import { INITIAL_TAB_STATE } from './initialState';
-import { selectTabState } from './selectors/tabs';
 
 initCache();
 

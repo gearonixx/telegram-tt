@@ -37,9 +37,9 @@ import {
 import {
   addActionHandler, getGlobal, setGlobal,
 } from '../../index';
-import { clearGlobalForLockScreen, updatePasscodeSettings } from '../../reducers/passcode';
-import { updateManagementProgress } from '../../reducers/management';
 import { updateAuth } from '../../reducers/auth';
+import { updateManagementProgress } from '../../reducers/management';
+import { clearGlobalForLockScreen, updatePasscodeSettings } from '../../reducers/passcode';
 import { selectSharedSettings } from '../../selectors/sharedState';
 import { destroySharedStatePort } from '../../shared/sharedStateConnector';
 

@@ -10,7 +10,9 @@ import {
 import { IS_TRANSLATION_SUPPORTED } from '../../util/browser/windowEnvironment';
 import { isUserId } from '../../util/entities/ids';
 import { getCurrentTabId } from '../../util/establishMultitabRole';
-import { getHasAdminRight, isChatAdmin, isChatChannel, isChatPublic, isChatSuperGroup, isUserRightBanned } from '../helpers/chats';
+import {
+  getHasAdminRight, isChatAdmin, isChatChannel, isChatPublic, isChatSuperGroup, isUserRightBanned,
+} from '../helpers/chats';
 import { isHistoryClearMessage } from '../helpers/messages';
 import { isUserBot, isUserOnline } from '../helpers/users';
 import { selectActiveRestrictionReasons } from './messages';

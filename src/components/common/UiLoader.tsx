@@ -8,9 +8,9 @@ import { ApiMediaFormat } from '../../api/types';
 import { FOLDERS_POSITION_LEFT } from '../../config';
 import { getChatAvatarHash } from '../../global/helpers/avatar'; // Direct import for better module splitting
 import { selectAreFoldersPresent } from '../../global/selectors/chats';
-import { selectIsRightColumnShown } from '../../global/selectors/ui';
-import { selectTabState } from '../../global/selectors/tabs';
 import { selectSharedSettings } from '../../global/selectors/sharedState';
+import { selectTabState } from '../../global/selectors/tabs';
+import { selectIsRightColumnShown } from '../../global/selectors/ui';
 import buildClassName from '../../util/buildClassName';
 import { preloadImage } from '../../util/files';
 import preloadFonts from '../../util/fonts';

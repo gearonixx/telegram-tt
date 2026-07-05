@@ -28,11 +28,11 @@ import {
   resetOpenedChannelShortpollState,
   syncOpenedShortpollChannelIds,
 } from '../../openedChannelShortpoll';
-import { updateUser, updateUserFullInfo } from '../../reducers/users';
 import { updateAuth } from '../../reducers/auth';
 import { updateTabState } from '../../reducers/tabs';
-import { selectTabState } from '../../selectors/tabs';
+import { updateUser, updateUserFullInfo } from '../../reducers/users';
 import { selectSharedSettings } from '../../selectors/sharedState';
+import { selectTabState } from '../../selectors/tabs';
 
 addActionHandler('apiUpdate', (global, actions, update): ActionReturnType => {
   switch (update['@type']) {

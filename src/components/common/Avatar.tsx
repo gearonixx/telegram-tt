@@ -12,10 +12,12 @@ import { ApiMediaFormat } from '../../api/types';
 
 import { IS_TEST } from '../../config';
 import { getChatAvatarHash } from '../../global/helpers/avatar';
-import { getChatTitle, getPeerColorKey, isAnonymousForwardsChat, isChatWithRepliesBot } from '../../global/helpers/chats';
-import { getPeerStoryHtmlId, getUserFullName, isDeletedUser } from '../../global/helpers/users';
+import {
+  getChatTitle, getPeerColorKey, isAnonymousForwardsChat, isChatWithRepliesBot,
+} from '../../global/helpers/chats';
 import { getVideoProfilePhotoMediaHash, getWebDocumentHash } from '../../global/helpers/messageMedia';
 import { isApiPeerChat, isApiPeerUser } from '../../global/helpers/peers';
+import { getPeerStoryHtmlId, getUserFullName, isDeletedUser } from '../../global/helpers/users';
 import buildClassName, { createClassNameBuilder } from '../../util/buildClassName';
 import buildStyle from '../../util/buildStyle';
 import { isUserId } from '../../util/entities/ids';

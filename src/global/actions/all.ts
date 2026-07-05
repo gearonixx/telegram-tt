@@ -1,7 +1,6 @@
 // Master-tab interval watchers (story expiration, channel shortpoll) are only
 // meaningful with a session, so they register with the main bundle
 import '../intervals';
-
 import './api/initial';
 import './api/chats';
 import './api/messages';

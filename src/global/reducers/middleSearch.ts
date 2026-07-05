@@ -17,8 +17,8 @@ import {
 // Direct imports keep the whole helpers barrel out of the boot bundle
 import { isMediaLoadableInViewer } from '../helpers/messageMedia';
 import { buildChatThreadKey } from '../helpers/middleSearch';
-import { selectTabState } from '../selectors/tabs';
 import { selectChatMediaSearch } from '../selectors/middleSearch';
+import { selectTabState } from '../selectors/tabs';
 import { replaceChatMediaSearch } from './chatMediaSearch';
 import { updateTabState } from './tabs';
 
@@ -430,4 +430,3 @@ export function replaceChatMediaSearchResults<T extends GlobalState>(
     segments,
   }, tabId);
 }
-

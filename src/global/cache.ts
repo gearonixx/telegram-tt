@@ -16,9 +16,9 @@ import { GLOBAL_STATE_CACHE_KEY } from '../util/multiaccount';
 import { encryptSession } from '../util/passcode';
 import { onBeforeUnload, throttle } from '../util/schedulers';
 import { hasStoredSession } from '../util/sessions';
+import { clearGlobalForLockScreen, clearSharedStateForLockScreen } from './reducers/passcode';
 import { addActionHandler, getGlobal } from './index';
 import { INITIAL_PERFORMANCE_STATE_MED } from './initialState';
-import { clearGlobalForLockScreen, clearSharedStateForLockScreen } from './reducers/passcode';
 
 const UPDATE_THROTTLE = 5000;
 
@@ -425,4 +425,3 @@ export function forceUpdateCache(noEncrypt = false) {
   cacheGlobal(serializer.reduceGlobal(global));
   cacheSharedState(serializer.reduceSharedState(global.sharedState));
 }
-

@@ -7,8 +7,8 @@ import type { UiLoaderPage } from './common/UiLoader';
 
 import { DARK_THEME_BG_COLOR, INACTIVE_MARKER, LIGHT_THEME_BG_COLOR, PAGE_TITLE, PAGE_TITLE_TAURI } from '../config';
 import { forceMutation } from '../lib/fasterdom/stricterdom.ts';
-import { selectActionMessageBg, selectTheme } from '../global/selectors/ui';
 import { selectTabState } from '../global/selectors/tabs';
+import { selectActionMessageBg, selectTheme } from '../global/selectors/ui';
 import { IS_TAURI } from '../util/browser/globalEnvironment';
 import { IS_INSTALL_PROMPT_SUPPORTED, PLATFORM_ENV } from '../util/browser/windowEnvironment';
 import buildClassName from '../util/buildClassName';

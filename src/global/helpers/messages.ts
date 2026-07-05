@@ -35,7 +35,9 @@ import { areSortedArraysIntersecting, unique } from '../../util/iteratees';
 import { isLocalMessageId } from '../../util/keys/messageKey';
 import { getServerTime } from '../../util/serverTime';
 import { getGlobal } from '../index';
-import { selectChatMessage, selectPollFromMessage, selectScheduledMessage, selectWebPageFromMessage } from '../selectors/messages';
+import {
+  selectChatMessage, selectPollFromMessage, selectScheduledMessage, selectWebPageFromMessage,
+} from '../selectors/messages';
 import { selectThreadIdFromMessage } from '../selectors/threads';
 import { getRichMessagePreviewText } from './richMessage';
 import { getMainUsername } from './users';

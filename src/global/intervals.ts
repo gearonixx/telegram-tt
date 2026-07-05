@@ -3,9 +3,9 @@ import { addCallback } from '../lib/teact/teactn';
 import type { GlobalState } from './types';
 
 import { getServerTime } from '../util/serverTime';
-import { resetOpenedChannelShortpollState, syncOpenedShortpollChannelIds } from './openedChannelShortpoll';
 import { removePeerStory } from './reducers/stories';
 import { selectTabState } from './selectors/tabs';
+import { resetOpenedChannelShortpollState, syncOpenedShortpollChannelIds } from './openedChannelShortpoll';
 import { getGlobal, setGlobal } from '.';
 
 const STORY_EXPIRATION_INTERVAL = 2 * 60 * 1000; // 2 min
