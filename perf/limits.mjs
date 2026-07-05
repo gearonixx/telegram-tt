@@ -19,9 +19,8 @@
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { createRequire } from 'module';
 import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { gunzipSync } from 'zlib';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
@@ -60,36 +59,33 @@ function benchMemcpy() {
 // --- Node: rlottie WASM rasterizer ---------------------------------------
 
 async function loadRlottie() {
-  const glue = readFileSync(join(RLOTTIE_DIR, 'rlottie-wasm.js'), 'utf8')
-    .replace(/^import wasmUrl.*$/m, '')
-    .replace(/^var Module = \{ locateFile: \(\) => wasmUrl \};$/m, '')
-    .replace(/export default Module;\s*/, '')
-    .replace(/export \{ allocate, intArrayFromString \};\s*/, ';return { Module, allocate, intArrayFromString };');
-  // eslint-disable-next-line no-new-func
-  const factory = new Function('Module', glue);
-  let onReady;
-  const ready = new Promise((resolve) => { onReady = resolve; });
-  const wasmBinary = readFileSync(join(RLOTTIE_DIR, 'rlottie-wasm.wasm'));
-  const exportsObj = factory({ wasmBinary, onRuntimeInitialized: () => onReady() });
-  await ready;
-  const { Module, allocate, intArrayFromString } = exportsObj;
+  const factory = (await import(pathToFileURL(join(RLOTTIE_DIR, 'rlottie-wasm.js')).href)).default;
+  const Module = await factory({ wasmBinary: readFileSync(join(RLOTTIE_DIR, 'rlottie-wasm.wasm')) });
   const api = {
-    init: Module.cwrap('lottie_init', '', []),
+    init: Module.cwrap('lottie_init', 'number', []),
     destroy: Module.cwrap('lottie_destroy', '', ['number']),
     resize: Module.cwrap('lottie_resize', '', ['number', 'number', 'number']),
     buffer: Module.cwrap('lottie_buffer', 'number', ['number']),
     render: Module.cwrap('lottie_render', '', ['number', 'number']),
     loadFromData: Module.cwrap('lottie_load_from_data', 'number', ['number', 'number']),
   };
-  return { Module, allocate, intArrayFromString, api };
+  return { Module, api };
+}
+
+function copyJsonToHeap(Module, json) {
+  const bytes = new TextEncoder().encode(json);
+  const ptr = Module._malloc(bytes.length + 1);
+  Module.HEAPU8.set(bytes, ptr);
+  Module.HEAPU8[ptr + bytes.length] = 0;
+  return ptr;
 }
 
 async function benchRasterizer() {
-  const { Module, allocate, intArrayFromString, api } = await loadRlottie();
+  const { Module, api } = await loadRlottie();
   results.node.rasterizer = [];
   for (const tgs of TGS_FILES) {
     const json = gunzipSync(readFileSync(join(DIR, '../src/assets/tgs', tgs))).toString();
-    const ptr = allocate(intArrayFromString(json), 'i8', 0);
+    const ptr = copyJsonToHeap(Module, json);
     const handle = api.init();
     const framesCount = api.loadFromData(handle, ptr);
     Module._free(ptr);

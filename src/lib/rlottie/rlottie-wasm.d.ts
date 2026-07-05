@@ -1,12 +1,16 @@
-type RLottieWasmModule = {
+export type RLottieWasmModule = {
   HEAPU8: Uint8Array<ArrayBuffer>;
-  onRuntimeInitialized?: NoneToVoidFunction;
   cwrap: (ident: string, returnType: string, argTypes: string[]) => AnyFunction;
+  _malloc: (size: number) => number;
   _free: (ptr: number) => void;
 };
 
-declare const Module: RLottieWasmModule;
+type RLottieModuleOverrides = {
+  locateFile?: (path: string) => string;
+  wasmBinary?: ArrayBuffer | Uint8Array;
+  onRuntimeInitialized?: NoneToVoidFunction;
+};
 
-export function allocate(slab: number[] | Uint8Array | number, types: string, allocator: number, ptr?: number): number;
-export function intArrayFromString(str: string, noAddNull?: boolean, length?: number): number[];
-export default Module;
+declare function initRlottieModule(overrides?: RLottieModuleOverrides): Promise<RLottieWasmModule>;
+
+export default initRlottieModule;

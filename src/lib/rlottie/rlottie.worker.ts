@@ -1,24 +1,34 @@
 import type { CancellableCallback } from '../../util/PostMessageConnector';
+import type { RLottieWasmModule } from './rlottie-wasm';
 
 import { DEBUG } from '../../config';
-import Module, { allocate, intArrayFromString } from './rlottie-wasm';
+import initRlottieModule from './rlottie-wasm';
+import wasmUrl from './rlottie-wasm.wasm?url';
 import { createWorkerInterface } from '../../util/createPostMessageInterface';
 
+let Module: RLottieWasmModule;
 let rLottieApi: Record<string, AnyFunction>;
-const rLottieApiPromise = new Promise<void>((resolve) => {
-  Module.onRuntimeInitialized = () => {
-    rLottieApi = {
-      init: Module.cwrap('lottie_init', '', []),
-      destroy: Module.cwrap('lottie_destroy', '', ['number']),
-      resize: Module.cwrap('lottie_resize', '', ['number', 'number', 'number']),
-      buffer: Module.cwrap('lottie_buffer', 'number', ['number']),
-      render: Module.cwrap('lottie_render', '', ['number', 'number']),
-      loadFromData: Module.cwrap('lottie_load_from_data', 'number', ['number', 'number']),
-    };
-
-    resolve();
+const rLottieApiPromise = initRlottieModule({
+  locateFile: (path: string) => (path.endsWith('.wasm') ? wasmUrl : path),
+}).then((mod) => {
+  Module = mod;
+  rLottieApi = {
+    init: Module.cwrap('lottie_init', 'number', []),
+    destroy: Module.cwrap('lottie_destroy', '', ['number']),
+    resize: Module.cwrap('lottie_resize', '', ['number', 'number', 'number']),
+    buffer: Module.cwrap('lottie_buffer', 'number', ['number']),
+    render: Module.cwrap('lottie_render', '', ['number', 'number']),
+    loadFromData: Module.cwrap('lottie_load_from_data', 'number', ['number', 'number']),
   };
 });
+
+function copyJsonToHeap(json: string) {
+  const bytes = new TextEncoder().encode(json);
+  const ptr = Module._malloc(bytes.length + 1);
+  Module.HEAPU8.set(bytes, ptr);
+  Module.HEAPU8[ptr + bytes.length] = 0;
+  return ptr;
+}
 
 const HIGH_PRIORITY_MAX_FPS = 60;
 const LOW_PRIORITY_MAX_FPS = 30;
@@ -33,7 +43,7 @@ const renderers = new Map<string, {
 
 if (DEBUG) {
   (globalThis as any).__rlottieWasmStats = () => ({
-    wasmHeapBytes: Module.HEAPU8?.length,
+    wasmHeapBytes: Module?.HEAPU8?.length,
     renderers: renderers.size,
     rendererImageDataBytes: 0,
   });
@@ -52,7 +62,7 @@ async function init(
   }
 
   const json = await extractJson(tgsUrl);
-  const stringOnWasmHeap = allocate(intArrayFromString(json), 'i8', 0);
+  const stringOnWasmHeap = copyJsonToHeap(json);
   const handle = rLottieApi.init();
   const framesCount = rLottieApi.loadFromData(handle, stringOnWasmHeap);
   // rlottie parses the JSON into its own structures inside `loadFromData`; the input copy is not needed anymore
@@ -79,7 +89,7 @@ async function changeData(
   }
 
   const json = await extractJson(tgsUrl);
-  const stringOnWasmHeap = allocate(intArrayFromString(json), 'i8', 0);
+  const stringOnWasmHeap = copyJsonToHeap(json);
   const { handle } = renderers.get(key)!;
   const framesCount = rLottieApi.loadFromData(handle, stringOnWasmHeap);
   Module._free(stringOnWasmHeap);
