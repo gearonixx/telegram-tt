@@ -233,8 +233,10 @@ export default defineConfig(({ mode }): UserConfig => {
 });
 
 // Chunks that are loaded at runtime during boot (so the browser can't discover them from
-// the static import graph) but are always needed before the first screen is interactive
-const CRITICAL_RUNTIME_CHUNK_RE = /^(?:fallback|qr-code-styling)-[\w-]+\.js$/;
+// the static import graph) but are always needed before the first screen is interactive.
+// `fallback-*` is excluded: the inlined `initialStrings` already cover every auth-screen key,
+// so that pack is fetched on idle instead and shouldn't compete for bandwidth pre-paint.
+const CRITICAL_RUNTIME_CHUNK_RE = /^qr-code-styling-[\w-]+\.js$/;
 
 // Mirrors `RE_CACHE_FIRST_ASSETS` in `src/serviceWorker/service.worker.ts`
 const SW_CACHEABLE_ASSET_RE = new RegExp(

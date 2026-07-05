@@ -35,7 +35,7 @@ import readFallbackStrings from '../data/readFallbackStrings';
 import { initialEstablishmentPromise, isCurrentTabMaster } from '../establishMultitabRole';
 import { omit, unique } from '../iteratees';
 import { replaceInStringsWithTeact } from '../replaceWithTeact';
-import { fastRaf } from '../schedulers';
+import { fastRaf, onIdle } from '../schedulers';
 import { resetDateFormatCache } from './dateFormat';
 
 import Deferred from '../Deferred';
@@ -224,10 +224,15 @@ export async function initLocalization(langCode: string, canLoadFromServer?: boo
     loadAndChangeLanguage(langCode);
   }
 
-  // Always start loading fallback pack in the background. Some languages may not have every string translated.
-  const fallbackLoad = loadFallbackPack();
-  if (!cachedData) {
-    await fallbackLoad;
+  // Load the fallback pack in the background — some languages don't translate every string.
+  if (cachedData) {
+    // A cached pack already covers the boot screens, so this only tops up untranslated keys.
+    loadFallbackPack();
+  } else {
+    // Fresh profile: the inlined `initialStrings` already cover every auth-screen key, so keep the
+    // fallback pack (40 KB wire) off the boot-critical path entirely — fetch it on idle and let it
+    // swap in via `scheduleCallbacks`. First paint is not gated on it.
+    onIdle(loadFallbackPack);
   }
 
   translationFn = createTranslationFn();
