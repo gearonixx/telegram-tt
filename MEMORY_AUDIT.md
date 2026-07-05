@@ -19,12 +19,13 @@ byte. These two mechanisms — decoded animation frames and immortal blobs —
 account for the bulk of the "500 MB+ tab" reports; the global message store
 and the GramJS worker entity cache add a slower, unbounded tail.
 
-**Outcome** (six commits, same scenario re-measured): steady-state frame
-cache **285.6 → 9.4 MB**, worker WASM floor **67.1 → 25.2 MB** at boot,
-renderer PSS **−270 MB (−22.5 %)**, whole process tree **−341 MB
-(−21.6 %)**; media blobs now capped by a 64 MB LRU instead of growing for
-the session's lifetime. Details in §5; WASM binary internals and the
-hardware-ceiling analysis in §6.
+**Outcome** (nine commits, same scenario re-measured): steady-state frame
+cache **285.6 → 8.9 MB**, worker WASM heaps **67.1 → 16.0 MB** at boot
+(23.4 MB under load), renderer PSS **1200.6 → 803.1 MB (−33 %)**, whole
+process tree **1580.6 → 1091.5 MB (−31 %)**; media blobs capped by a 64 MB
+LRU; rlottie-wasm rebuilt from source with SIMD (+9–28 % render throughput,
+bit-exact, 134.7 KB brotli shipped). Details in §5; WASM internals, the
+emcc-6 resizable-buffer trap and the hardware-ceiling analysis in §6.
 
 ## 1. Architecture recon (memory-relevant subsystems)
 
@@ -140,7 +141,8 @@ Savings measured on the S0–S4 scenario at DPR 2 unless marked *est.*
 Isolated commits on `memory-optimizations`, measured on the identical
 scenario (`perf/out/baseline.json` vs `perf/out/after-wasm.json`; the
 intermediate `after.json` run isolates commits 2–5 before the WASM floor
-patch).
+patch, and `after-simd.json` measures the final state with the source
+rebuild, commits 7–9).
 
 1. `[Dev] Perf: Add memory measurement harness, mock scenario and debug counters`
 2. `[Perf] RLottie: Bound the decoded-frame cache` *(rank 1 + 3)*
@@ -156,6 +158,14 @@ patch).
    worker` — binary + glue patch, no recompilation (see §6.1); measured
    separately as `after-wasm` since the 4 media workers instantiate at app
    start.
+7. `[Perf] RLottie: Rebuild rlottie-wasm from source with SIMD and a 4 MB
+   heap floor` — replaces the commit-6 binary patch at the source level
+   (recipe + wrapper in `src/lib/rlottie/BUILD.md`); bit-exact against the
+   old binary, +9–28 % render throughput, floor 6 → 4 MB per worker.
+8. `[Dev] Perf: Add CPU profiler for the mocked scenario`
+9. `[Size] RLottie: Shrink the rebuilt WASM with LTO, emmalloc and an -Oz +
+   wasm-opt pass` — shipped module 134.7 KB brotli vs 131.6 KB for the old
+   binary (§6.7).
 
 Baseline → **after all six commits** (decimal MB, double-GC'd, DPR 2):
 
@@ -196,6 +206,22 @@ Reading the table honestly:
   this end state during the first `after` run, the same renderer settled at
   **207 MB**.
 
+Re-measured with the source rebuild (commits 7–9, `after-simd.json`):
+
+| Metric (S4 unless noted) | after (six commits) | after-simd (final) |
+|---|---|---|
+| RLottie frame cache | 9.4 MB / 279 frames | **8.9 MB / 279 frames** |
+| Worker WASM heaps at boot | 25.2 MB | **16.0 MB** (4 × 4 MB) |
+| Worker WASM heaps under load | 37.2 MB | **23.4 MB** |
+| Renderer PSS | 930.6 MB | **803.1 MB** |
+| Total tree PSS | 1239.1 MB | **1091.5 MB** |
+
+Against baseline the final S4 numbers are: frame cache **−97 %**, renderer
+PSS **−33 %**, process tree **−31 %**, and frames stay live where they
+should (S2 sticker scroll: 10 frames / 4.7 MB cached while animating).
+Run-to-run variance on the Chromium-discardable component of PSS is real
+(±tens of MB); the wasm-heap and frame-cache columns are exact counters.
+
 Both knobs are compile-time constants and act as feature flags:
 `MAX_LOOP_CACHE_BYTES` / `FRAME_CACHE_GLOBAL_BUDGET_BYTES` (`RLottie.ts`) set
 to `Infinity` and `MEDIA_MEMORY_CACHE_MAX_BYTES` (`config.ts`) set to `0`
@@ -233,11 +259,17 @@ growth are the only two levers that exist; both are now applied. A
 `memory.discard`-style proposal exists upstream in the WASM CG but has not
 shipped in any browser.
 
+**Superseded:** commit 7 rebuilds the module from source (recipe and
+wrapper in `src/lib/rlottie/BUILD.md`), making this binary patch
+historical — the floor is now 4 MB per worker straight from
+`-sINITIAL_MEMORY`, the glue is 16 KB, and the blend kernels plus the
+ARGB→RGBA conversion run as WASM SIMD.
+
 ### 6.2 Full worker / library inventory
 
 | Subsystem | Memory shape | Verdict |
 |---|---|---|
-| 4 × media workers (`launchMediaWorkers`, hosting `rlottie.worker` + `offscreen-canvas.worker`) | 16 MB → **6 MB** WASM floor each (commit 6) + worker JS runtime; spawned eagerly at first `RLottie.ts` import | Lazy spawn is the remaining win (§6.4) |
+| 4 × media workers (`launchMediaWorkers`, hosting `rlottie.worker` + `offscreen-canvas.worker`) | 16 MB → **4 MB** WASM floor each (commit 7) + worker JS runtime; spawned eagerly at first `RLottie.ts` import | Lazy spawn is the remaining win (§6.4) |
 | GramJS worker (`src/api/gramjs`) | `localDb` grow-only Records of TL class instances (H6); sender/auth maps bounded per-DC (≤ 5) | Out of scope (MTProto semantics); upstream LRU proposal in §4 rank 6 |
 | fastText (`src/lib/fasttextweb`) | 1.1 MB wasm (937 KB embedded language model), memory **defined in-binary, fixed min = max = 16 MB** — not growable, not glue-patchable without relocating data segments | Only spawns when the native `LanguageDetector` API is missing (i.e. not in Chromium), but then it spawns **4 s after boot unconditionally**, used or not — lazy-init on first `detectLanguage` is a free 17 MB on Firefox/Safari |
 | opus (`oggToWav`, Safari-only) | 2 workers per conversion, terminated after use | Clean |
@@ -315,8 +347,8 @@ software raster there, so treat draw numbers as CPU-path ceilings):
 | Stage | Measured ceiling | Note |
 |---|---|---|
 | DRAM copy (single thread) | **22.5 GB/s** node / 21.6 GB/s renderer | typed-array `set()` |
-| rlottie render, complex sticker @ 416² | **650 fps** = 450 MB/s = 8.9 ns/px | scalar WASM, one thread |
-| rlottie render, simple icon @ 416² | 5 785 fps | vector complexity, not pixels, dominates |
+| rlottie render, complex sticker @ 416² | **650 → 705 fps** = 8.2 ns/px | SIMD rebuild, shipped -Oz build (commits 7/9) |
+| rlottie render, simple icon @ 416² | 5 785 → **7 575 fps** = 0.76 ns/px | vector complexity, not pixels, dominates |
 | rlottie render, complex @ 128² | 1 595 fps | per-frame setup cost dominates small sizes |
 | `ImageData → createImageBitmap` @ 416² | 7 410 fps = 5.1 GB/s | the snapshot copy |
 | `transferFromImageBitmap` (bitmaprenderer) | ~free (7 408 fps incl. snapshot) | supports roadmap #2 |
@@ -328,11 +360,14 @@ What the numbers prove about "the absolute limit":
   frames/s) consumes **3.8 %** of single-thread DRAM bandwidth — memory
   bandwidth is never the wall.
 - 8.9 ns/px ≈ **45 CPU cycles per pixel**: the signature of scalar ARGB
-  blending, one pixel per instruction chain through general-purpose
-  registers, using one 32-bit lane of 128-bit vector units. A `-msimd128`
-  rebuild (V8 lowers WASM SIMD onto SSE4/AVX) processes 4+ pixels per
-  instruction — the classic ~2–4× — moving the rasterizer wall from
-  650 to ~1 500–2 500 fps per core.
+  work through general-purpose registers. The `-msimd128 -msse2` rebuild
+  (commit 7) was then measured, not predicted: **+9 % complex / +28 %
+  simple** (705 / 7 575 fps) — not the naive 2–4×, because compiled SIMD
+  only reaches the blend kernels and the wrapper's conversion, while ~40 %
+  of ticks live in freetype-derived span-coverage accumulation
+  (`gray_set_cell` 20.1 %, `gray_render_line` 10.0 %, `gray_raster_render`
+  9.8 %) — a branchy scanline state machine no compiler auto-vectorizes.
+  The 2–4× requires hand-vectorizing that kernel (§6.7).
 - The rasterizer parallelizes across the 4 media workers today: ~2 600
   complex-frames/s fleet-wide ≈ **43 simultaneous worst-case stickers at
   60 fps at DPR 2** before any SIMD. Sticker *rendering* was never the
@@ -349,6 +384,61 @@ What the numbers prove about "the absolute limit":
   `perf`, `perf_event_paranoid=2`), so cycles/px is inferred from
   throughput at nominal clocks rather than measured IPC.
 
+### 6.6 The emcc-6 resizable-ArrayBuffer trap
+
+emcc ≥ 6 defaults (`GROWABLE_ARRAYBUFFERS=1`) to backing the heap with a
+resizable `ArrayBuffer` (`WebAssembly.Memory.toResizableBuffer()`) when the
+engine has it. Chromium 148 does; Node 25 does not. `ImageData`'s WebIDL
+does not opt into `[AllowResizable]`, so the zero-copy render path threw
+`Failed to construct 'ImageData': The provided Uint8ClampedArray value must
+not be resizable` on **every frame** in the browser — while every Node-side
+check (bit-exactness, fps, `limits.mjs`) passed. Symptom: a full
+measurement run with `RLottie frames: 0` at every checkpoint while wasm
+heaps grew normally. Fix: `-sGROWABLE_ARRAYBUFFERS=0` (see `BUILD.md`).
+Lesson: any wasm/glue upgrade needs an in-browser frame-delivery probe,
+not just Node validation.
+
+### 6.7 Where the CPU actually goes, and the real C++ ceiling
+
+Main thread (V8 sampling profiler, `perf/profile.mjs`, 12 s of playback +
+scroll): **82 % idle**, ~18 % V8 `(program)` (compositor/native). All Teact
+internals combined — reconciliation, DOM ops, hooks — sum to ≈ 95 ms of
+12 000 ms (**0.8 %**); the largest single app entry is `get scrollTop`
+(72 ms of forced-layout reads in the infinite-scroll path). Rewriting the
+framework buys nothing measurable at runtime; the CPU budget lives in the
+render workers and the compositor.
+
+Inside the wasm (V8 ticks over an instrumented build, `prof-report.txt`):
+`gray_set_cell` 20.1 %, `lottie_render` self 17.8 % (≈ all of it the
+ARGB→RGBA conversion — vectorized in commit 7), `gray_render_line` 10.0 %,
+`gray_raster_render` 9.8 %, `blendColorARGB` 6.8 %, `SW_FT_*` fixed-point
+trig/stroker ≈ 12 %.
+
+The remaining C++-level ladder, ordered by measured leverage:
+
+1. **Hand-vectorize span-coverage accumulation** (`gray_*`, ~40 % of
+   ticks): a data-dependent scanline state machine — SIMD-able only with a
+   redesigned cell layout (4–8 cells per lane, masked carry resolution).
+   Realistic 2–3× on rasterization ⇒ ~1.8–2.5× overall; a fork-level
+   rewrite of rlottie's freetype-derived raster, weeks of work, not flags.
+2. **Replace the `SW_FT_Atan2` / `SW_FT_Vector_From_Polar` CORDIC loops**
+   with polynomial approximations in the stroker (~12 % of ticks on
+   stroke-heavy stickers) ⇒ +10–15 %.
+3. **Threads** (`-pthread`, needs COOP/COEP headers): rlottie can tile
+   `renderSync` internally (~3× on one large sticker), but the app already
+   parallelizes across 4 workers — this only improves worst-case single
+   stickers, not fleet throughput.
+4. **Relaxed SIMD** (FMA/relaxed swizzle, shipped in Chromium) on
+   gradient/blend paths: single-digit %.
+5. Past CPU entirely: a WebGPU compute rasterizer for vector paths
+   (vello-style) is the true hardware limit — order-of-magnitude on dense
+   vector content, and a research-grade rewrite.
+
+With steps 1–2 landed the complex-sticker ceiling moves from 705 toward
+~1 500–2 000 fps/core (3–4 ns/px); across 4 workers that is 100+
+worst-case stickers at 60 fps — past any real viewport, which is why the
+architectural roadmap (§6.4) matters more than further rasterizer heroics.
+
 ## 7. Verification & regression safety
 
 - `npx tsc --noEmit` and `eslint` clean on every commit.
@@ -364,4 +454,10 @@ What the numbers prove about "the absolute limit":
   inputs from `src/assets/tgs`), which independently confirms
   `loadFromData` still parses after the commit-3 `_free` and the commit-6
   memory patch.
+- The SIMD rebuild (commits 7/9) is validated three ways: bit-exact against
+  the original binary in Node (max channel delta 0 across complex/gradient/
+  static stickers), an in-browser probe asserting frame delivery in the
+  sticker channel (`cachedFrames 279`) — the check that caught the
+  resizable-buffer trap of §6.6 — and the full `after-simd` measurement
+  run (frame cache live at S2/S4, wasm floor 16.0 MB at boot).
 - No MTProto/API-layer behavior changed.
