@@ -1,2 +1,0 @@
-import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./ldif-C2X5KYea.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/ldif" instead of "highlight.js/lib/languages/ldif.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=ldif.js-BZd28IWz.js.map

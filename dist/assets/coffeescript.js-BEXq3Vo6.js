@@ -1,2 +1,0 @@
-import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./coffeescript-BRLZNEOU.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/coffeescript" instead of "highlight.js/lib/languages/coffeescript.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=coffeescript.js-BEXq3Vo6.js.map

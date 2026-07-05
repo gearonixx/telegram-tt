@@ -1,0 +1,2 @@
+import{invoke as e}from"./core-SwWLTXZB.js";async function t(){await e(`plugin:process|restart`)}export{t as relaunch};
+//# sourceMappingURL=dist-js-BMKJtzjQ.js.map

@@ -1,2 +1,0 @@
-import{hS as e}from"./index-ZsrbboX4.js";var t=e(((e,t)=>{function n(e){return{name:`Clojure REPL`,contains:[{className:`meta.prompt`,begin:/^([\w.-]+|\s*#_)?=>/,starts:{end:/$/,subLanguage:`clojure`}}]}}t.exports=n}));export default t();export{t};
-//# sourceMappingURL=clojure-repl-eu0hiKpq.js.map

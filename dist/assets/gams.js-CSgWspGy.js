@@ -1,2 +1,0 @@
-import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./gams-DVKr4Tq2.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/gams" instead of "highlight.js/lib/languages/gams.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=gams.js-CSgWspGy.js.map

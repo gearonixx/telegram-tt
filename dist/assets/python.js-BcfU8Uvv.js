@@ -1,2 +1,0 @@
-import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./python-D817j4Zf.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/python" instead of "highlight.js/lib/languages/python.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=python.js-BcfU8Uvv.js.map

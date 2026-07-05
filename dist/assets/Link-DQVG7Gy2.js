@@ -1,2 +1,0 @@
-import{Jh as e,Xd as t,iy as n}from"./index-ZsrbboX4.js";var r={link:`QqgPse9b`,isPrimary:`_17U5fxqx`},i=({children:i,isPrimary:a,className:o,isRtl:s,withMultilineFix:c,onClick:l})=>{let u=t(e=>{e.preventDefault(),l(e)});return n(`a`,{href:`#`,className:e(`Link`,r.link,o,a&&r.isPrimary),dir:c?void 0:s?`rtl`:`auto`,onClick:l?u:void 0,children:i})};export{i as t};
-//# sourceMappingURL=Link-DQVG7Gy2.js.map

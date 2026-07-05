@@ -1,2 +1,0 @@
-import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./r-I7drqHim.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/r" instead of "highlight.js/lib/languages/r.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=r.js-B6Sntaf9.js.map

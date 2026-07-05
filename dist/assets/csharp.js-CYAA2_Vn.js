@@ -1,2 +1,0 @@
-import{hS as e}from"./index-ZsrbboX4.js";import{t}from"./csharp-BBTw31aw.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/csharp" instead of "highlight.js/lib/languages/csharp.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=csharp.js-CYAA2_Vn.js.map
