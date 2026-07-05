@@ -111,6 +111,7 @@ export default defineConfig(({ mode }): UserConfig => {
         run: 'npm run icons:build',
       },
     ]),
+    createCriticalPreloadPlugin(),
   ];
 
   if (bundleStatsVisualizerValue === '1') {
@@ -213,16 +214,6 @@ export default defineConfig(({ mode }): UserConfig => {
     build: {
       sourcemap: true,
       assetsInlineLimit: (filePath) => (IMAGE_ASSET_RE.test(filePath) ? false : undefined),
-      rolldownOptions: {
-        output: {
-          manualChunks(id) {
-            if (id.includes('/src/components/ui/')) {
-              return 'shared-components';
-            }
-            return undefined;
-          },
-        },
-      },
     },
     worker: {
       plugins: shouldCollectWorkerReportBundles ? () => [
@@ -237,6 +228,27 @@ export default defineConfig(({ mode }): UserConfig => {
     plugins,
   };
 });
+
+// Chunks that are loaded at runtime during boot (so the browser can't discover them from
+// the static import graph) but are always needed before the first screen is interactive
+const CRITICAL_RUNTIME_CHUNK_RE = /^(?:fallback|qr-code-styling)-[\w-]+\.js$/;
+
+function createCriticalPreloadPlugin(): Plugin {
+  return {
+    name: 'telegram:preload-critical-chunks',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        if (!ctx.bundle) return html;
+        const links = Object.keys(ctx.bundle)
+          .filter((fileName) => CRITICAL_RUNTIME_CHUNK_RE.test(fileName.replace(/^assets\//, '')))
+          .map((fileName) => `<link rel="modulepreload" crossorigin href="./${fileName}">`);
+        if (!links.length) return html;
+        return html.replace('</head>', `${links.join('\n')}\n</head>`);
+      },
+    },
+  };
+}
 
 function createBundleReportPlugin(plugin: BundleReportPlugin, workerReportBundles: ReportOutputBundle[]): Plugin {
   return {
