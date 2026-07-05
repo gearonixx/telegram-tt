@@ -47,6 +47,7 @@ type ViewInfo = {
 const HIGH_PRIORITY_QUALITY = (IS_ANDROID || IS_IOS) ? 0.75 : 1;
 const LOW_PRIORITY_QUALITY = IS_ANDROID ? 0.5 : 0.75;
 const LOW_PRIORITY_QUALITY_SIZE_THRESHOLD = 24;
+const MAX_RENDER_DPR = 1.5;
 const HIGH_PRIORITY_CACHE_MODULO = IS_SAFARI ? 2 : 4;
 const LOW_PRIORITY_CACHE_MODULO = 0;
 // Loops larger than this, or arriving when the global budget is exhausted, only keep a sliding window of frames.
@@ -402,8 +403,10 @@ class RLottie {
         ? LOW_PRIORITY_QUALITY : HIGH_PRIORITY_QUALITY,
     } = this.params;
 
-    // Reduced quality only looks acceptable on high DPR screens
-    return Math.max(window.devicePixelRatio * quality, 1);
+    // Reduced quality only looks acceptable on high DPR screens.
+    // The DPR itself is capped: on a 2x screen frames render slightly softer
+    // in exchange for ~2x fewer pixels per frame (memory and render CPU)
+    return Math.max(Math.min(window.devicePixelRatio, MAX_RENDER_DPR) * quality, 1);
   }
 
   private destroy() {
