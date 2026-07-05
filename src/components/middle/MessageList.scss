@@ -100,18 +100,6 @@
     .live-tail {
       overflow-anchor: none;
       min-height: max(0rem, calc(100cqh - var(--message-list-top-inset) - var(--message-list-bottom-inset)));
-
-      .message-list-item {
-        animation: live-tail-message-mount 0.2s ease-out;
-
-        &.own {
-          transform-origin: bottom right;
-        }
-
-        body.no-message-sending-animations & {
-          animation: none;
-        }
-      }
     }
 
     @media (max-width: 600px) {
@@ -155,9 +143,6 @@
   .Message,
   .ActionMessage {
     position: relative;
-    transform: scale(1);
-    opacity: 1;
-    transition: opacity 0.2s ease, transform 0.2s ease;
 
     &::before {
       content: "";
@@ -177,27 +162,6 @@
       body.no-page-transitions & {
         transition: none !important;
       }
-    }
-
-    &:not(.open) {
-      transform: scale(0.8);
-      opacity: 0;
-    }
-
-    body.no-message-sending-animations & {
-      transform: none;
-      opacity: 1;
-      transition: none !important;
-    }
-
-    &.is-just-added:not(.own) {
-      transform: none;
-    }
-
-    // Restore stacking context
-    // https://developer.mozilla.org/ru/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context
-    &.open.shown {
-      transform: none;
     }
 
     &:not(.last-in-group) {
@@ -434,9 +398,4 @@
       transform: translate3d(0, calc(-1 * (var(--symbol-menu-height))), 0);
     }
   }
-}
-
-@keyframes live-tail-message-mount {
-  from { transform: translateY(2rem); }
-  to { transform: translateY(0); }
 }
