@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'fs';
 
 import initialKeys from '../src/assets/localization/initialKeys';
-import { buildFallbackStrings } from '../src/util/data/readFallbackStrings';
+import { buildFallbackStrings } from '../src/util/data/readStrings';
 import { pick } from '../src/util/iteratees';
 
 const HEADER = `/* eslint-disable */

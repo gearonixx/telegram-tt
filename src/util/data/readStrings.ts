@@ -1,4 +1,56 @@
+import type {
+  ApiLanguage, CachedLangData, LangPack, LangPackStringValuePlural,
+} from '../../api/types';
+
 const IS_DEBUG = import.meta.env?.TG_APP_ENV !== 'production';
+
+const FALLBACK_LANG_CODE = 'en';
+const FALLBACK_VERSION = 0;
+const FALLBACK_TRANSLATE_URL = `https://translations.telegram.org/${FALLBACK_LANG_CODE}/weba`;
+
+// Build-time only: parses the raw `.strings` file into the structured langpack.
+// Invoked by `plugins/fallbackLangpack.ts`, never bundled into the client
+export function buildFallbackStrings(fileData: string): CachedLangData {
+  const rawStrings = readStrings(fileData);
+
+  const strings: LangPack['strings'] = {};
+
+  Object.entries(rawStrings).forEach(([key, value]) => {
+    const [clearKey, pluralSuffix] = key.split('_');
+
+    if (!pluralSuffix) {
+      strings[clearKey] = value;
+      return;
+    }
+
+    const knownValue = (strings[clearKey] || {}) as LangPackStringValuePlural;
+    knownValue[pluralSuffix as keyof LangPackStringValuePlural] = value;
+    strings[clearKey] = knownValue;
+  });
+
+  const langPack: LangPack = {
+    langCode: FALLBACK_LANG_CODE,
+    version: FALLBACK_VERSION,
+    strings,
+  };
+
+  const stringsCount = Object.keys(strings).length;
+
+  const language: ApiLanguage = {
+    langCode: FALLBACK_LANG_CODE,
+    name: 'English',
+    nativeName: 'English',
+    pluralCode: FALLBACK_LANG_CODE,
+    stringsCount,
+    translatedCount: stringsCount,
+    translationsUrl: FALLBACK_TRANSLATE_URL,
+  };
+
+  return {
+    langPack,
+    language,
+  };
+}
 
 export default function readStrings(data: string): Record<string, string> {
   const lines = data.split(/;\r?\n?/);

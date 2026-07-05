@@ -7,6 +7,7 @@ import { defineConfig, loadEnv, normalizePath, type Plugin, type PluginOption, t
 import { type Target, viteStaticCopy } from 'vite-plugin-static-copy';
 import { watchAndRun } from 'vite-plugin-watch-and-run';
 
+import buildFallbackLangpackPlugin from './plugins/fallbackLangpack';
 import buildGitInfoPlugin from './plugins/gitInfo';
 import packageJson from './package.json' with { type: 'json' };
 
@@ -89,6 +90,10 @@ export default defineConfig(({ mode }): UserConfig => {
       head: HEAD,
       isDevelopmentMode,
       rootDir: DIR_NAME,
+    }),
+    buildFallbackLangpackPlugin({
+      stringsPath: buildProjectPath('src/assets/localization/fallback.strings'),
+      isDevelopmentMode,
     }),
     viteStaticCopy({ targets: STATIC_COPY_TARGETS }),
     isDevelopmentMode && watchAndRun([
