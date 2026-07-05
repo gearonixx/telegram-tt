@@ -33,6 +33,11 @@ const LOW_PRIORITY_QUALITY = IS_ANDROID ? 0.5 : 0.75;
 const LOW_PRIORITY_QUALITY_SIZE_THRESHOLD = 24;
 const HIGH_PRIORITY_CACHE_MODULO = IS_SAFARI ? 2 : 4;
 const LOW_PRIORITY_CACHE_MODULO = 0;
+// Loops larger than this, or arriving when the global budget is exhausted, only keep a sliding window of frames.
+// Both `Infinity` restores the unbounded `cacheModulo`-only policy
+const MAX_LOOP_CACHE_BYTES = 2 * 1024 * 1024;
+const FRAME_CACHE_GLOBAL_BUDGET_BYTES = 32 * 1024 * 1024;
+const BOUNDED_CACHE_WINDOW = 5;
 const CANVAS_CLASS = 'rlottie-canvas';
 
 const workers = launchMediaWorkers().map(({ connector }) => connector);
@@ -78,13 +83,13 @@ class RLottie {
 
   private imgSize!: number;
 
-  private imageData!: ImageData;
-
   private msPerFrame = 1000 / 60;
 
   private reduceFactor = 1;
 
   private cacheModulo!: number;
+
+  private isCacheBounded?: boolean;
 
   private workerIndex!: number;
 
@@ -213,20 +218,18 @@ class RLottie {
       this.isAnimating = false;
     }
 
-    if (!this.params.isLowPriority) {
-      this.frames = this.frames.map((frame, i) => {
-        if (i === this.prevFrameIndex) {
-          return frame;
-        } else {
-          if (frame && frame !== WAITING) {
-            discountCachedFrame(frame);
-            frame.close();
-          }
-
-          return undefined;
+    this.frames = this.frames.map((frame, i) => {
+      if (i === this.prevFrameIndex) {
+        return frame;
+      } else {
+        if (frame && frame !== WAITING) {
+          discountCachedFrame(frame);
+          frame.close();
         }
-      });
-    }
+
+        return undefined;
+      }
+    });
   }
 
   playSegment([startFrameIndex, stopFrameIndex]: [number, number], forceRestart = false, viewId?: string) {
@@ -315,7 +318,6 @@ class RLottie {
 
       if (!this.imgSize) {
         this.imgSize = imgSize;
-        this.imageData = new ImageData(imgSize, imgSize);
       }
 
       requestMutation(() => {
@@ -348,7 +350,6 @@ class RLottie {
 
       if (!this.imgSize) {
         this.imgSize = imgSize;
-        this.imageData = new ImageData(imgSize, imgSize);
       }
 
       const [canvasWidth, canvasHeight] = ensureCanvasSize(canvas, sizeFactor);
@@ -400,8 +401,6 @@ class RLottie {
       }
     });
 
-    // Help GC
-    this.imageData = undefined as any;
     this.frames = [];
   }
 
@@ -443,6 +442,7 @@ class RLottie {
     this.reduceFactor = reduceFactor;
     this.msPerFrame = msPerFrame;
     this.framesCount = framesCount;
+    this.updateCacheMode();
 
     if (this.isWaiting) {
       this.doPlay();
@@ -469,10 +469,18 @@ class RLottie {
     this.reduceFactor = reduceFactor;
     this.msPerFrame = msPerFrame;
     this.framesCount = framesCount;
+    this.updateCacheMode();
     this.isWaiting = false;
     this.isAnimating = false;
 
     this.doPlay();
+  }
+
+  private updateCacheMode() {
+    const loopBytes = this.imgSize * this.imgSize * 4 * this.framesCount!;
+
+    this.isCacheBounded = loopBytes > MAX_LOOP_CACHE_BYTES
+      || frameStats.bytes + loopBytes > FRAME_CACHE_GLOBAL_BUDGET_BYTES;
   }
 
   private doPlay() {
@@ -527,7 +535,9 @@ class RLottie {
         return false;
       }
 
-      if (this.cacheModulo && frameIndex % this.cacheModulo === 0) {
+      if (this.isCacheBounded) {
+        this.trimFrameCache(frameIndex);
+      } else if (this.cacheModulo && frameIndex % this.cacheModulo === 0) {
         this.cleanupPrevFrame(frameIndex);
       }
 
@@ -636,17 +646,47 @@ class RLottie {
     const prevFrame = this.frames[prevFrameIndex];
     if (prevFrame && prevFrame !== WAITING) {
       discountCachedFrame(prevFrame);
+      prevFrame.close();
     }
     this.frames[prevFrameIndex] = undefined;
   }
 
+  // Keeps only the frames within `BOUNDED_CACHE_WINDOW` ahead of the playhead (plus the currently drawn one)
+  private trimFrameCache(currentFrameIndex: number) {
+    const framesCount = this.framesCount!;
+    if (framesCount <= BOUNDED_CACHE_WINDOW) {
+      return;
+    }
+
+    for (let i = 0; i < this.frames.length; i++) {
+      const frame = this.frames[i];
+      if (!frame || frame === WAITING || i === this.prevFrameIndex) {
+        continue;
+      }
+
+      const distance = cycleRestrict(framesCount, (i - currentFrameIndex) * this.direction);
+      if (distance >= BOUNDED_CACHE_WINDOW) {
+        discountCachedFrame(frame);
+        frame.close();
+        this.frames[i] = undefined;
+      }
+    }
+  }
+
   private onFrameLoad(frameIndex: number, imageBitmap: ImageBitmap) {
+    // The instance was destroyed or the slot was released while the frame was being rendered
     if (this.frames[frameIndex] !== WAITING) {
+      imageBitmap.close();
       return;
     }
 
     this.frames[frameIndex] = imageBitmap;
     countCachedFrame(imageBitmap);
+
+    if (!this.isCacheBounded && frameStats.bytes > FRAME_CACHE_GLOBAL_BUDGET_BYTES) {
+      this.isCacheBounded = true;
+      this.trimFrameCache(frameIndex);
+    }
 
     if (this.isWaiting) {
       this.doPlay();
