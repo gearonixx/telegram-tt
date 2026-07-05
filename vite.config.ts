@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from 'fs';
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { bundleStats } from 'rollup-plugin-bundle-stats';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -112,6 +112,7 @@ export default defineConfig(({ mode }): UserConfig => {
       },
     ]),
     createCriticalPreloadPlugin(),
+    createSwAssetManifestPlugin(),
   ];
 
   if (bundleStatsVisualizerValue === '1') {
@@ -234,6 +235,51 @@ export default defineConfig(({ mode }): UserConfig => {
 // Chunks that are loaded at runtime during boot (so the browser can't discover them from
 // the static import graph) but are always needed before the first screen is interactive
 const CRITICAL_RUNTIME_CHUNK_RE = /^(?:fallback|qr-code-styling)-[\w-]+\.js$/;
+
+// Mirrors `RE_CACHE_FIRST_ASSETS` in `src/serviceWorker/service.worker.ts`
+const SW_CACHEABLE_ASSET_RE = new RegExp(
+  /(?:^assets\/[^/]+|^(?:[^/]+\.)?worker|^index)-[\w-]{8}/.source
+  + /\.(?:js|css|woff2?|svg|png|jpe?g|tgs|json|wasm)$/.source,
+);
+const SW_BOOT_ASSET_RE = new RegExp(
+  /^(?:assets\/(?:index|fallback|qr-code-styling|main)-[\w-]+\.(?:js|css)/.source
+  + /|assets\/Roboto-(?:Regular|Medium)[\w-]*\.woff2)$/.source,
+);
+const SW_ASSET_MANIFEST = 'sw-asset-manifest.json';
+
+// Emits a manifest of the build's content-hashed assets, which the service
+// worker uses to precache the boot-critical set on install and to retain
+// still-valid entries across deployments instead of wiping the whole cache
+function createSwAssetManifestPlugin(): Plugin {
+  let outDir = 'dist';
+
+  function listFiles(dir: string, prefix = ''): string[] {
+    return readdirSync(resolve(dir), { withFileTypes: true }).flatMap((entry) => {
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        // The emoji sprite directories hold thousands of unhashed files that are never SW-cached
+        return entry.name.startsWith('img-apple') ? [] : listFiles(`${dir}/${entry.name}`, rel);
+      }
+      return [rel];
+    });
+  }
+
+  return {
+    name: 'telegram:sw-asset-manifest',
+    apply: 'build',
+    configResolved(config) {
+      outDir = config.build.outDir;
+    },
+    closeBundle() {
+      const files = listFiles(outDir).filter((file) => SW_CACHEABLE_ASSET_RE.test(file));
+      const boot = files.filter((file) => SW_BOOT_ASSET_RE.test(file));
+      writeFileSync(
+        resolve(outDir, SW_ASSET_MANIFEST),
+        JSON.stringify({ version: APP_VERSION, boot, all: files }),
+      );
+    },
+  };
+}
 
 function createCriticalPreloadPlugin(): Plugin {
   return {
