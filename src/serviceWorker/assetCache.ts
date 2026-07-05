@@ -6,6 +6,15 @@ declare const self: ServiceWorkerGlobalScope;
 // An attempt to fix freezing UI on iOS
 const TIMEOUT = 3000;
 
+// Emitted at build time by `createSwAssetManifestPlugin` in `vite.config.ts`
+const ASSET_MANIFEST_PATH = 'sw-asset-manifest.json';
+
+type AssetManifest = {
+  version: string;
+  boot: string[];
+  all: string[];
+};
+
 export async function respondWithCacheNetworkFirst(e: FetchEvent) {
   const remote = await withTimeout(() => fetch(e.request), TIMEOUT);
   if (!remote?.ok) {
@@ -64,6 +73,58 @@ async function withTimeout<T>(cb: () => Promise<T>, timeout: number) {
   }
 }
 
-export function clearAssetCache() {
-  return self.caches.delete(ASSET_CACHE_NAME);
+// Fetches the boot-critical assets into the cache ahead of the first request,
+// so a repeat visit renders the auth/main screen without touching the network
+export async function precacheBootAssets() {
+  const manifest = await fetchAssetManifest();
+  if (!manifest?.boot.length) return;
+
+  const cache = await self.caches.open(ASSET_CACHE_NAME);
+  const urls = manifest.boot.map((path) => new URL(path, self.registration.scope).href);
+  const missing = (await Promise.all(
+    urls.map(async (url) => ((await cache.match(url)) ? undefined : url)),
+  )).filter(Boolean);
+
+  await Promise.all(missing.map(async (url) => {
+    try {
+      const remote = await fetch(url);
+      if (remote.ok) await cache.put(url, remote);
+    } catch (err) {
+      // Best-effort: the fetch handler fills the cache lazily anyway
+    }
+  }));
+}
+
+// Drops only the entries absent from the current build, so still-valid assets
+// survive a deployment; `reHashedAssets` guards entries the manifest never
+// lists (the app shell HTML cached by the network-first path)
+export async function pruneAssetCache(reHashedAssets: RegExp) {
+  const manifest = await fetchAssetManifest();
+  if (!manifest) {
+    // No manifest (older build): previous behavior
+    return self.caches.delete(ASSET_CACHE_NAME);
+  }
+
+  const validUrls = new Set(manifest.all.map((path) => new URL(path, self.registration.scope).href));
+  const cache = await self.caches.open(ASSET_CACHE_NAME);
+  const requests = await cache.keys();
+  const staleRequests = requests.filter((request) => {
+    const { pathname } = new URL(request.url);
+    return !validUrls.has(request.url) && Boolean(pathname.match(reHashedAssets));
+  });
+
+  await Promise.all(staleRequests.map((request) => cache.delete(request)));
+
+  return undefined;
+}
+
+async function fetchAssetManifest(): Promise<AssetManifest | undefined> {
+  try {
+    const remote = await fetch(new URL(ASSET_MANIFEST_PATH, self.registration.scope).href, { cache: 'no-cache' });
+    if (!remote.ok) return undefined;
+    return await remote.json() as AssetManifest;
+  } catch (err) {
+    // Dev server or offline: behave as if there is no manifest
+    return undefined;
+  }
 }

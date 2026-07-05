@@ -1,6 +1,8 @@
 import { DEBUG } from '../config';
 import { pause } from '../util/schedulers';
-import { clearAssetCache, respondWithCache, respondWithCacheNetworkFirst } from './assetCache';
+import {
+  precacheBootAssets, pruneAssetCache, respondWithCache, respondWithCacheNetworkFirst,
+} from './assetCache';
 import { respondForDownload } from './download';
 import { respondForProgressive } from './progressive';
 import {
@@ -26,8 +28,11 @@ self.addEventListener('install', (e) => {
     console.log('ServiceWorker installed');
   }
 
-  // Activate worker immediately
-  e.waitUntil(self.skipWaiting());
+  e.waitUntil(Promise.all([
+    // Activate worker immediately
+    self.skipWaiting(),
+    precacheBootAssets(),
+  ]));
 });
 
 self.addEventListener('activate', (e) => {
@@ -41,7 +46,7 @@ self.addEventListener('activate', (e) => {
       // An attempt to fix freezing UI on iOS
       pause(ACTIVATE_TIMEOUT),
       Promise.all([
-        clearAssetCache(),
+        pruneAssetCache(RE_CACHE_FIRST_ASSETS),
         // Become available to all pages
         self.clients.claim(),
       ]),
