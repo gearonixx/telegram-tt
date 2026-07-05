@@ -23,17 +23,20 @@ mkdir build && cd build
 emcmake cmake ../rlottie -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
   -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
   -DLOTTIE_MODULE=OFF -DLOTTIE_THREAD=OFF -DLOTTIE_TEST=OFF -DLOTTIE_EXAMPLE=OFF \
-  -DCMAKE_CXX_FLAGS="-O3 -msimd128 -msse2 -Wno-error" \
-  -DCMAKE_C_FLAGS="-O3 -msimd128 -msse2 -Wno-error"
+  -DCMAKE_CXX_FLAGS="-Oz -flto -fno-exceptions -msimd128 -msse2 -Wno-error" \
+  -DCMAKE_C_FLAGS="-Oz -flto -fno-exceptions -msimd128 -msse2 -Wno-error"
 make -j rlottie
 
-em++ -O3 -msimd128 -msse2 wrapper.cpp librlottie.a -I../rlottie/inc \
-  -o rlottie-wasm.js \
+em++ -Oz -flto -fno-exceptions -msimd128 -msse2 wrapper.cpp librlottie.a \
+  -I../rlottie/inc -o rlottie-wasm.js \
   -sMODULARIZE=1 -sEXPORT_ES6=1 -sENVIRONMENT=web,worker,node \
   -sALLOW_MEMORY_GROWTH=1 -sGROWABLE_ARRAYBUFFERS=0 \
   -sINITIAL_MEMORY=4194304 -sMAXIMUM_MEMORY=2147483648 -sSTACK_SIZE=1048576 \
   -sEXPORTED_FUNCTIONS=_lottie_init,_lottie_destroy,_lottie_resize,_lottie_buffer,_lottie_render,_lottie_load_from_data,_malloc,_free \
-  -sEXPORTED_RUNTIME_METHODS=cwrap,HEAPU8 -sFILESYSTEM=0
+  -sEXPORTED_RUNTIME_METHODS=cwrap,HEAPU8 -sFILESYSTEM=0 -sMALLOC=emmalloc
+
+# Last few KB: binaryen size pass over the linked module (ships in emsdk)
+wasm-opt --all-features -Oz rlottie-wasm.wasm -o rlottie-wasm.wasm
 ```
 
 ## Why `-sGROWABLE_ARRAYBUFFERS=0` is required
@@ -210,7 +213,10 @@ crediting Samsung.
 - rlottie's hand-written SSE2 blend kernels compile to WASM SIMD via
   `-msse2 -msimd128`, and the wrapper's ARGB→RGBA conversion is vectorized:
   +9 % (complex) to +28 % (simple) whole-render throughput.
-- Binary 310 KB → 445 KB raw; with the smaller glue the net raw delta is
-  about +65 KB before compression — the cost of SIMD codegen and the newer
-  runtime, bought back many times over by the 12 MB × 4 workers heap-floor
-  drop.
+- Size pass: `-Oz -flto -fno-exceptions -sMALLOC=emmalloc` plus the
+  `wasm-opt -Oz` post-pass measures within ±2 % of a plain `-O3` build on
+  all three test stickers (still bit-exact), so the smaller build ships.
+- Shipped bytes (brotli −q 11, what a server actually sends): wasm 129.8 KB
+  + glue 4.8 KB = **134.7 KB**, vs 131.6 KB for the old module — +3.1 KB
+  compressed buys SIMD rendering (+9–28 %) and the 12 MB-per-worker
+  heap-floor drop. Raw: wasm 450 472 B, glue 16 163 B.
