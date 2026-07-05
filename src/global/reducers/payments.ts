@@ -17,7 +17,8 @@ import type {
 
 import { STARS_CURRENCY_CODE, TON_CURRENCY_CODE } from '../../config';
 import { getCurrentTabId } from '../../util/establishMultitabRole';
-import { selectStarsPayment, selectTabState } from '../selectors';
+import { selectStarsPayment } from '../selectors/payments';
+import { selectTabState } from '../selectors/tabs';
 import { updateTabState } from './tabs';
 
 export function updatePayment<T extends GlobalState>(

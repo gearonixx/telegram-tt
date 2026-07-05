@@ -2,8 +2,9 @@ import type { ThreadId } from '../types';
 import type { GlobalState } from './types';
 
 import { callApi } from '../api/gramjs';
-import { isChatChannel, isChatSuperGroup } from './helpers';
-import { selectCurrentMessageList, selectTabState } from './selectors';
+import { isChatChannel, isChatSuperGroup } from './helpers/chats';
+import { selectCurrentMessageList } from './selectors/messages';
+import { selectTabState } from './selectors/tabs';
 
 const MAX_OPENED_CHANNELS = 10;
 

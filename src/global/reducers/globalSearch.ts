@@ -5,7 +5,7 @@ import type { GlobalState, TabArgs, TabState } from '../types';
 import { getCurrentTabId } from '../../util/establishMultitabRole';
 import { areSortedArraysEqual } from '../../util/iteratees';
 import { getSearchResultKey } from '../../util/keys/searchResultKey';
-import { selectTabState } from '../selectors';
+import { selectTabState } from '../selectors/tabs';
 import { updateTabState } from './tabs';
 
 export function updateGlobalSearch<T extends GlobalState>(

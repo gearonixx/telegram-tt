@@ -4,8 +4,8 @@ import type { GlobalState } from './types';
 
 import { getServerTime } from '../util/serverTime';
 import { resetOpenedChannelShortpollState, syncOpenedShortpollChannelIds } from './openedChannelShortpoll';
-import { removePeerStory } from './reducers';
-import { selectTabState } from './selectors';
+import { removePeerStory } from './reducers/stories';
+import { selectTabState } from './selectors/tabs';
 import { getGlobal, setGlobal } from '.';
 
 const STORY_EXPIRATION_INTERVAL = 2 * 60 * 1000; // 2 min

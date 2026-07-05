@@ -5,13 +5,10 @@ import type { GlobalState } from '../types';
 
 import { isUserId } from '../../util/entities/ids';
 import { omit, uniqueByField } from '../../util/iteratees';
-import { isChatChannel } from '../helpers';
-import {
-  selectChatFullInfo,
-  selectPeer,
-  selectPeerPhotos,
-  selectUserFullInfo,
-} from '../selectors';
+import { isChatChannel } from '../helpers/chats';
+import { selectChatFullInfo } from '../selectors/chats';
+import { selectPeer, selectPeerPhotos } from '../selectors/peers';
+import { selectUserFullInfo } from '../selectors/users';
 import { updateChat, updateChatFullInfo } from './chats';
 import { updateUser, updateUserFullInfo } from './users';
 

@@ -17,9 +17,11 @@ import { addTabStateResetterAction } from '../../helpers/meta';
 import {
   addActionHandler, getActions, setGlobal,
 } from '../../index';
-import { replaceSettings, updateSharedSettings, updateThemeSettings } from '../../reducers';
+import { replaceSettings, updateSharedSettings, updateThemeSettings } from '../../reducers/settings';
 import { updateTabState } from '../../reducers/tabs';
-import { selectCanAnimateInterface, selectChatFolder, selectTabState } from '../../selectors';
+import { selectCanAnimateInterface } from '../../selectors/ui';
+import { selectChatFolder } from '../../selectors/chats';
+import { selectTabState } from '../../selectors/tabs';
 import { selectSharedSettings } from '../../selectors/sharedState';
 
 let prevGlobal: GlobalState | undefined;

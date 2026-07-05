@@ -19,7 +19,6 @@ import {
 import * as cacheApi from '../../../util/cacheApi';
 import { getCurrentTabId } from '../../../util/establishMultitabRole';
 import { ACCOUNT_SLOT, getAccountsInfo } from '../../../util/multiaccount';
-import { unsubscribe } from '../../../util/notifications';
 import { clearEncryptedSession, encryptSession, forgetPasscode } from '../../../util/passcode';
 import { parseInitialLocationHash, resetInitialLocationHash, resetLocationHash } from '../../../util/routing';
 import { pause } from '../../../util/schedulers';
@@ -33,14 +32,13 @@ import {
   callApi, callApiLocal, initApi, setShouldEnableDebugLog,
 } from '../../../api/gramjs';
 import {
-  removeGlobalFromCache, removeSharedStateFromCache, serializeGlobal, serializeShared,
+  removeGlobalFromCache, removeSharedStateFromCache,
 } from '../../cache';
 import {
   addActionHandler, getGlobal, setGlobal,
 } from '../../index';
-import {
-  clearGlobalForLockScreen, updateManagementProgress, updatePasscodeSettings,
-} from '../../reducers';
+import { clearGlobalForLockScreen, updatePasscodeSettings } from '../../reducers/passcode';
+import { updateManagementProgress } from '../../reducers/management';
 import { updateAuth } from '../../reducers/auth';
 import { selectSharedSettings } from '../../selectors/sharedState';
 import { destroySharedStatePort } from '../../shared/sharedStateConnector';
@@ -206,7 +204,8 @@ addActionHandler('signOut', async (global, actions, payload): Promise<void> => {
   try {
     resetInitialLocationHash();
     resetLocationHash();
-    await unsubscribe();
+    // Loaded on demand to keep the notification tree out of the boot-critical bundle
+    await import('../../../util/notifications').then(({ unsubscribe }) => unsubscribe());
     await Promise.race([callApi('destroy'), pause(3000)]);
     await forceWebsync(false);
   } catch (err) {
@@ -281,6 +280,22 @@ addActionHandler('loadNearestCountry', async (global): Promise<void> => {
   setGlobal(global);
 });
 
+// Registered here (not in `api/settings`) because the auth phone-number screen needs it pre-auth
+addActionHandler('loadCountryList', async (global, actions, payload): Promise<void> => {
+  let { langCode } = payload;
+  if (!langCode) langCode = selectSharedSettings(global).language;
+
+  const countryList = await callApi('fetchCountryList', { langCode });
+  if (!countryList) return;
+
+  global = getGlobal();
+  global = {
+    ...global,
+    countryList,
+  };
+  setGlobal(global);
+});
+
 addActionHandler('setDeviceToken', (global, actions, payload): ActionReturnType => {
   const { token } = payload;
   return {
@@ -300,6 +315,8 @@ addActionHandler('deleteDeviceToken', (global): ActionReturnType => {
 });
 
 addActionHandler('lockScreen', async (global): Promise<void> => {
+  // Loaded on demand to keep the serializer's selector tree out of the boot-critical bundle
+  const { serializeGlobal, serializeShared } = await import('../../cacheSerializer');
   const sessionJson = JSON.stringify({ ...loadStoredSession(), userId: global.currentUserId });
   const globalJson = serializeGlobal(global);
   const sharedStateJson = serializeShared(global.sharedState);
@@ -327,7 +344,7 @@ addActionHandler('lockScreen', async (global): Promise<void> => {
   }, LOCK_SCREEN_ANIMATION_DURATION_MS);
 
   try {
-    await unsubscribe();
+    await import('../../../util/notifications').then(({ unsubscribe }) => unsubscribe());
     await callApi('destroy', true);
   } catch (err) {
     // Do nothing

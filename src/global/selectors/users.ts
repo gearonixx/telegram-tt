@@ -5,7 +5,7 @@ import type {
 import type { BotAppPermissions } from '../../types';
 import type { GlobalState } from '../types';
 
-import { isUserBot } from '../helpers';
+import { isUserBot } from '../helpers/users';
 
 export function selectUser<T extends GlobalState>(global: T, userId: string): ApiUser | undefined {
   return global.users.byId[userId];

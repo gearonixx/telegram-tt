@@ -1,5 +1,3 @@
-import './intervals';
-
 import type { ActionReturnType, GlobalState } from './types';
 
 import { IS_MULTIACCOUNT_SUPPORTED } from '../util/browser/globalEnvironment';
@@ -11,9 +9,9 @@ import { isLocalMessageId } from '../util/keys/messageKey';
 import { Bundles, loadBundle } from '../util/moduleLoader';
 import { parseLocationHash } from '../util/routing';
 import { updatePeerColors } from '../util/theme';
-import { initializeChatMediaSearchResults } from './reducers/middleSearch';
+import { initializeChatMediaSearchResults } from './reducers/chatMediaSearch';
 import { updateTabState } from './reducers/tabs';
-import { replaceTabThreadParam, replaceThreadLocalStateParam } from './reducers/threads';
+import { replaceTabThreadParam, replaceThreadLocalStateParam } from './reducers/threadParams';
 import { selectThreadLocalStateParam } from './selectors/threads';
 import { initSharedState } from './shared/sharedStateConnector';
 import { initCache } from './cache';
@@ -21,7 +19,7 @@ import {
   addActionHandler, getGlobal, setGlobal,
 } from './index';
 import { INITIAL_TAB_STATE } from './initialState';
-import { selectTabState } from './selectors';
+import { selectTabState } from './selectors/tabs';
 
 initCache();
 

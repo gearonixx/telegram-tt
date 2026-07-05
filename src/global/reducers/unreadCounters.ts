@@ -3,7 +3,7 @@ import type { ThreadId, ThreadReadState } from '../../types';
 import type { GlobalState } from '../types';
 
 import { buildCollectionByKey, unique } from '../../util/iteratees';
-import { groupMessageIdsByThreadId } from '../helpers';
+import { groupMessageIdsByThreadId } from '../helpers/messages';
 import { selectThreadReadState } from '../selectors/threads';
 import { addChatMessagesById } from './messages';
 import { replaceThreadReadStateParam } from './threads';

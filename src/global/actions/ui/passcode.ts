@@ -10,8 +10,9 @@ import {
 import { onBeforeUnload } from '../../../util/schedulers';
 import { clearStoredSession, loadStoredSession, storeSession } from '../../../util/sessions';
 import {
-  forceUpdateCache, migrateCache, serializeGlobal, serializeShared,
+  forceUpdateCache, migrateCache,
 } from '../../cache';
+import { serializeGlobal, serializeShared } from '../../cacheSerializer';
 import { addActionHandler, getGlobal, setGlobal } from '../../index';
 import { INITIAL_GLOBAL_STATE } from '../../initialState';
 import { clearPasscodeSettings, updatePasscodeSettings } from '../../reducers';

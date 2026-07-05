@@ -15,7 +15,8 @@ import { getCurrentTabId } from '../../util/establishMultitabRole';
 import { omit, omitUndefined, unique } from '../../util/iteratees';
 import { MEMO_EMPTY_ARRAY } from '../../util/memo';
 import { getSavedGiftKey } from '../helpers/stars';
-import { selectActiveGiftsCollectionId, selectTabState } from '../selectors';
+import { selectActiveGiftsCollectionId } from '../selectors/payments';
+import { selectTabState } from '../selectors/tabs';
 import { updateTabState } from './tabs';
 
 export function replaceUsers<T extends GlobalState>(global: T, newById: Record<string, ApiUser>): T {

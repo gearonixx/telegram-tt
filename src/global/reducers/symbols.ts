@@ -3,7 +3,8 @@ import type { GlobalState, TabArgs } from '../types';
 
 import { getCurrentTabId } from '../../util/establishMultitabRole';
 import { buildCollectionByKey, unique } from '../../util/iteratees';
-import { selectCustomEmojiForEmoji, selectStickersForEmoji, selectTabState } from '../selectors';
+import { selectCustomEmojiForEmoji, selectStickersForEmoji } from '../selectors/symbols';
+import { selectTabState } from '../selectors/tabs';
 import { updateTabState } from './tabs';
 
 export function updateStickerSearch<T extends GlobalState>(

@@ -28,7 +28,7 @@ import {
 import { formatDateToString, formatTime } from '../../util/dates/oldDateFormat';
 import { getPeerIdDividend, isUserId } from '../../util/entities/ids';
 import { getServerTime } from '../../util/serverTime';
-import { selectIsChatRestricted } from '../selectors';
+import { selectIsChatRestricted } from '../selectors/chats';
 import { getGlobal } from '..';
 import { isSystemBot } from './bots';
 import { getMainUsername } from './users';

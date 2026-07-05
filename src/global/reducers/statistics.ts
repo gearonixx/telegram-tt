@@ -5,7 +5,7 @@ import type {
 import type { GlobalState, TabArgs, TabState } from '../types';
 
 import { getCurrentTabId } from '../../util/establishMultitabRole';
-import { selectTabState } from '../selectors';
+import { selectTabState } from '../selectors/tabs';
 import { updateTabState } from './tabs';
 
 export function updateStatistics<T extends GlobalState>(

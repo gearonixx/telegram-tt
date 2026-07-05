@@ -38,40 +38,10 @@ import { MEMO_EMPTY_ARRAY } from '../../util/memo';
 import { getServerTime } from '../../util/serverTime';
 import { getDocumentExtension } from '../../components/common/helpers/documentInfo';
 import { API_GENERAL_ID_LIMIT } from '../../limits';
-import {
-  canSendReaction,
-  getAllowedAttachmentOptions,
-  getCanPostInChat,
-  getHasAdminRight,
-  getIsSavedDialog,
-  getMessageAudio,
-  getMessageDocument,
-  getMessageLink,
-  getMessagePaidMedia,
-  getMessagePhoto,
-  getMessageVideo,
-  getMessageVoice,
-  getSendingState,
-  getWebPagePhoto,
-  getWebPageVideo,
-  hasMessageTtl,
-  isActionMessage,
-  isChatBasicGroup,
-  isChatChannel,
-  isChatGroup,
-  isChatSuperGroup,
-  isCommonBoxChat,
-  isExpiredMessage,
-  isForwardedMessage,
-  isMessageDocumentSticker,
-  isMessageFailed,
-  isMessageLocal,
-  isMessageTranslatable,
-  isOwnMessage,
-  isServiceNotificationMessage,
-  isUserRightBanned,
-  prepareMessageReplyInfo,
-} from '../helpers';
+import { canSendReaction } from '../helpers/reactions';
+import { getAllowedAttachmentOptions, getCanPostInChat, getHasAdminRight, getIsSavedDialog, isChatBasicGroup, isChatChannel, isChatGroup, isChatSuperGroup, isCommonBoxChat, isUserRightBanned } from '../helpers/chats';
+import { getMessageAudio, getMessageDocument, getMessagePaidMedia, getMessagePhoto, getMessageVideo, getMessageVoice, getWebPagePhoto, getWebPageVideo, isMessageDocumentSticker } from '../helpers/messageMedia';
+import { getMessageLink, getSendingState, hasMessageTtl, isActionMessage, isExpiredMessage, isForwardedMessage, isMessageFailed, isMessageLocal, isMessageTranslatable, isOwnMessage, isServiceNotificationMessage, prepareMessageReplyInfo } from '../helpers/messages';
 import { getMessageReplyInfo } from '../helpers/replies';
 import {
   selectChat,

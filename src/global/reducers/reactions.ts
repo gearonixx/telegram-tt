@@ -10,8 +10,9 @@ import {
   MIN_LEFT_COLUMN_WIDTH,
   SIDE_COLUMN_MAX_WIDTH,
 } from '../../components/middle/helpers/calculateMiddleFooterTransforms';
-import { getReactionKey, updateReactionCount } from '../helpers';
-import { selectIsChatWithSelf, selectSendAs, selectTabState } from '../selectors';
+import { getReactionKey, updateReactionCount } from '../helpers/reactions';
+import { selectIsChatWithSelf, selectSendAs } from '../selectors/chats';
+import { selectTabState } from '../selectors/tabs';
 import { updateChatMessage } from './messages';
 import { addUnreadCount, removeUnreadCount } from './unreadCounters';
 

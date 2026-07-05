@@ -23,16 +23,12 @@ import { startWebsync, stopWebsync } from '../../../util/websync';
 import { callApi } from '../../../api/gramjs';
 import { clearCaching, setupCaching } from '../../cache';
 import { addActionHandler, getGlobal, setGlobal } from '../../index';
-import { updateSharedSettings } from '../../reducers';
+import { updateSharedSettings } from '../../reducers/settings';
 import { updateAuth } from '../../reducers/auth';
 import { updateTabState } from '../../reducers/tabs';
-import {
-  selectCanAnimateInterface,
-  selectPerformanceSettings,
-  selectSettingsKeys,
-  selectTabState,
-  selectTheme,
-} from '../../selectors';
+import { selectCanAnimateInterface, selectPerformanceSettings, selectTheme } from '../../selectors/ui';
+import { selectSettingsKeys } from '../../selectors/settings';
+import { selectTabState } from '../../selectors/tabs';
 import { selectSharedSettings } from '../../selectors/sharedState';
 import { destroySharedStatePort, initSharedState } from '../../shared/sharedStateConnector';
 

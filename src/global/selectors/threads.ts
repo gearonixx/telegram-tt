@@ -4,7 +4,7 @@ import { type ApiMessage, MAIN_THREAD_ID } from '../../api/types';
 
 import { ANONYMOUS_USER_ID, GENERAL_TOPIC_ID } from '../../config';
 import { getCurrentTabId } from '../../util/establishMultitabRole';
-import { isChatBasicGroup, isChatSuperGroup } from '../helpers';
+import { isChatBasicGroup, isChatSuperGroup } from '../helpers/chats';
 import { getMessageReplyInfo } from '../helpers/replies';
 import { selectChat } from './chats';
 import { selectTabState } from './tabs';

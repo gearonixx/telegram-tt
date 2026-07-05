@@ -10,7 +10,7 @@ import { areDeepEqual } from '../../util/areDeepEqual';
 import {
   areSortedArraysEqual, buildCollectionByKey, omit, omitUndefined, pick,
 } from '../../util/iteratees';
-import { selectChatFullInfo } from '../selectors';
+import { selectChatFullInfo } from '../selectors/chats';
 import { updateThreadInfoLastMessageId } from './threads';
 import { addUnreadCount, removeUnreadCount } from './unreadCounters';
 

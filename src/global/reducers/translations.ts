@@ -5,7 +5,8 @@ import type { GlobalState, TabArgs } from '../types';
 import { getCurrentTabId } from '../../util/establishMultitabRole';
 import { omit } from '../../util/iteratees';
 import { getTranslationCacheKey, parseTranslationCacheKey } from '../../util/keys/translationKey';
-import { selectMessageTranslations, selectTabState } from '../selectors';
+import { selectMessageTranslations } from '../selectors/messages';
+import { selectTabState } from '../selectors/tabs';
 import { updateTabState } from './tabs';
 
 export function updateMessageTranslation<T extends GlobalState>(

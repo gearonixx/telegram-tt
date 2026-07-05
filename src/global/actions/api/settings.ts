@@ -621,21 +621,6 @@ addActionHandler('updateContentSettings', async (global, actions, payload): Prom
   }
 });
 
-addActionHandler('loadCountryList', async (global, actions, payload): Promise<void> => {
-  let { langCode } = payload;
-  if (!langCode) langCode = selectSharedSettings(global).language;
-
-  const countryList = await callApi('fetchCountryList', { langCode });
-  if (!countryList) return;
-
-  global = getGlobal();
-  global = {
-    ...global,
-    countryList,
-  };
-  setGlobal(global);
-});
-
 addActionHandler('ensureTimeFormat', async (global, actions): Promise<void> => {
   if (global.auth.nearestCountry) {
     const timeFormat = COUNTRIES_WITH_12H_TIME_FORMAT

@@ -24,30 +24,11 @@ import {
 } from '../../util/iteratees';
 import { isLocalMessageId, type MessageKey } from '../../util/keys/messageKey';
 import { unload } from '../../util/mediaLoader';
-import {
-  getAllMessageMediaHashes,
-  getMessageStatefulContent,
-  groupMessageIdsByThreadId,
-  hasMessageTtl, isMediaLoadableInViewer, mergeIdRanges, orderHistoryIds, orderPinnedIds,
-} from '../helpers';
+import { getAllMessageMediaHashes, isMediaLoadableInViewer } from '../helpers/messageMedia';
+import { getMessageStatefulContent, groupMessageIdsByThreadId, hasMessageTtl, mergeIdRanges, orderHistoryIds, orderPinnedIds } from '../helpers/messages';
 import { getEmojiOnlyCountForMessage } from '../helpers/getEmojiOnlyCountForMessage';
-import {
-  selectChatMessage,
-  selectChatMessages,
-  selectChatScheduledMessages,
-  selectCurrentMessageIds,
-  selectCurrentMessageList,
-  selectListedIds,
-  selectMessageIdsByGroupId,
-  selectOutlyingLists,
-  selectPinnedIds,
-  selectPoll,
-  selectQuickReplyMessage,
-  selectScheduledMessage,
-  selectTabState,
-  selectViewportIds,
-  selectWebPage,
-} from '../selectors';
+import { selectChatMessage, selectChatMessages, selectChatScheduledMessages, selectCurrentMessageIds, selectCurrentMessageList, selectListedIds, selectMessageIdsByGroupId, selectOutlyingLists, selectPinnedIds, selectPoll, selectQuickReplyMessage, selectScheduledMessage, selectViewportIds, selectWebPage } from '../selectors/messages';
+import { selectTabState } from '../selectors/tabs';
 import { selectThreadIdFromMessage, selectThreadInfo, selectThreadLocalStateParam } from '../selectors/threads';
 import { removeUnreadMentions } from './chats';
 import { removeIdFromSearchResults } from './middleSearch';
@@ -60,9 +41,10 @@ import {
   replaceThreadLocalStateParam,
   updateThreadInfoMessagesCount,
 } from './threads';
+import { updateMessageStore } from './messageStore';
 import { clearMessageSummary, clearMessageTranslation } from './translations';
 
-type MessageStoreSections = GlobalState['messages']['byChatId'][string];
+export { updateMessageStore } from './messageStore';
 
 export function updateCurrentMessageList<T extends GlobalState>(
   global: T,
@@ -109,27 +91,6 @@ export function replaceChatMessages<T extends GlobalState>(
   return updateMessageStore(global, chatId, {
     byId: newById,
   });
-}
-
-export function updateMessageStore<T extends GlobalState>(
-  global: T, chatId: string, update: Partial<MessageStoreSections>,
-): T {
-  const current = global.messages.byChatId[chatId]
-    || { byId: {}, threadsById: {}, summaryById: {} };
-
-  return {
-    ...global,
-    messages: {
-      ...global.messages,
-      byChatId: {
-        ...global.messages.byChatId,
-        [chatId]: {
-          ...current,
-          ...update,
-        },
-      },
-    },
-  };
 }
 
 export function addMessages<T extends GlobalState>(

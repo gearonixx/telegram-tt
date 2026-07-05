@@ -15,11 +15,12 @@ import { isUserId } from '../../util/entities/ids';
 import { getCurrentTabId } from '../../util/establishMultitabRole';
 import { compareFields, unique } from '../../util/iteratees';
 import { getServerTime } from '../../util/serverTime';
-import { updateReactionCount } from '../helpers';
-import {
-  selectIsChatWithSelf,
-  selectPeer, selectPeerStories, selectPeerStory, selectTabState, selectUser,
-} from '../selectors';
+import { updateReactionCount } from '../helpers/reactions';
+import { selectIsChatWithSelf } from '../selectors/chats';
+import { selectPeer } from '../selectors/peers';
+import { selectPeerStories, selectPeerStory } from '../selectors/stories';
+import { selectTabState } from '../selectors/tabs';
+import { selectUser } from '../selectors/users';
 import { updatePeer } from './peers';
 import { updateTabState } from './tabs';
 

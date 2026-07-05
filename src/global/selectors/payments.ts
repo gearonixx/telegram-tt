@@ -3,9 +3,7 @@ import type { GlobalState, TabArgs } from '../types';
 import { DEFAULT_GIFT_PROFILE_FILTER_OPTIONS } from '../../config';
 import { areRecordsShallowEqual } from '../../util/areShallowEqual';
 import { getCurrentTabId } from '../../util/establishMultitabRole';
-import {
-  getHasAdminRight, isChatAdmin, isChatChannel,
-} from '../helpers';
+import { getHasAdminRight, isChatAdmin, isChatChannel } from '../helpers/chats';
 import { selectChat } from './chats';
 import { selectTabState } from './tabs';
 import { selectUser } from './users';

@@ -17,9 +17,12 @@ import {
 // Direct imports keep the whole helpers barrel out of the boot bundle
 import { isMediaLoadableInViewer } from '../helpers/messageMedia';
 import { buildChatThreadKey } from '../helpers/middleSearch';
-import { selectTabState } from '../selectors';
+import { selectTabState } from '../selectors/tabs';
 import { selectChatMediaSearch } from '../selectors/middleSearch';
+import { replaceChatMediaSearch } from './chatMediaSearch';
 import { updateTabState } from './tabs';
+
+export { initializeChatMediaSearchResults } from './chatMediaSearch';
 
 interface SharedMediaSearchParams {
   currentType?: SharedMediaType;
@@ -391,31 +394,6 @@ export function updateChatMediaLoadingState<T extends GlobalState>(
   );
 }
 
-export function initializeChatMediaSearchResults<T extends GlobalState>(
-  global: T,
-  chatId: string,
-  threadId: ThreadId,
-  ...[tabId = getCurrentTabId()]: TabArgs<T>
-): T {
-  const loadingState: LoadingState = {
-    areAllItemsLoadedForwards: false,
-    areAllItemsLoadedBackwards: false,
-  };
-  const currentSegment: ChatMediaSearchSegment = {
-    foundIds: [],
-    loadingState,
-  };
-  const segments: ChatMediaSearchSegment[] = [];
-
-  const isLoading = false;
-
-  return replaceChatMediaSearch(global, chatId, threadId, {
-    currentSegment,
-    segments,
-    isLoading,
-  }, tabId);
-}
-
 export function setChatMediaSearchLoading<T extends GlobalState>(
   global: T,
   chatId: string,
@@ -453,21 +431,3 @@ export function replaceChatMediaSearchResults<T extends GlobalState>(
   }, tabId);
 }
 
-function replaceChatMediaSearch<T extends GlobalState>(
-  global: T,
-  chatId: string,
-  threadId: ThreadId,
-  searchParams: ChatMediaSearchParams,
-  ...[tabId = getCurrentTabId()]: TabArgs<T>
-): T {
-  const chatThreadKey = buildChatThreadKey(chatId, threadId);
-
-  return updateTabState(global, {
-    chatMediaSearch: {
-      byChatThreadKey: {
-        ...selectTabState(global, tabId).chatMediaSearch.byChatThreadKey,
-        [chatThreadKey]: searchParams,
-      },
-    },
-  }, tabId);
-}

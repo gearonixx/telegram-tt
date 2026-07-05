@@ -8,23 +8,8 @@ import {
 } from '../../api/types';
 
 import { NSFW_RESTRICTION_REASON } from '../../config';
-import {
-  getMessageAudio,
-  getMessageContent,
-  getMessageDocument,
-  getMessageInvoice,
-  getMessageMediaHash,
-  getMessagePhoto,
-  getMessageSingleCustomEmoji,
-  getMessageSingleRegularEmoji,
-  getMessageSticker,
-  getMessageVideo,
-  getMessageVoice,
-  getWebPageAudio,
-  getWebPageDocument,
-  getWebPagePhoto,
-  getWebPageVideo,
-} from '../helpers';
+import { getMessageAudio, getMessageContent, getMessageDocument, getMessageInvoice, getMessageMediaHash, getMessagePhoto, getMessageSticker, getMessageVideo, getMessageVoice, getWebPageAudio, getWebPageDocument, getWebPagePhoto, getWebPageVideo } from '../helpers/messageMedia';
+import { getMessageSingleCustomEmoji, getMessageSingleRegularEmoji } from '../helpers/messages';
 import { selectChat } from './chats';
 import {
   selectActiveRestrictionReasons,

@@ -3,10 +3,8 @@ import type { TopicsInfo } from '../../types';
 import type { GlobalState } from '../types';
 
 import { omit, pick, unique } from '../../util/iteratees';
-import {
-  selectChat, selectTopic, selectTopics,
-  selectTopicsInfo,
-} from '../selectors';
+import { selectChat } from '../selectors/chats';
+import { selectTopic, selectTopics, selectTopicsInfo } from '../selectors/topics';
 import {
   updateThreadInfo,
   updateThreadLocalState,
