@@ -271,7 +271,7 @@ ARGB→RGBA conversion run as WASM SIMD.
 |---|---|---|
 | 4 × media workers (`launchMediaWorkers`, hosting `rlottie.worker` + `offscreen-canvas.worker`) | 16 MB → **4 MB** WASM floor each (commit 7) + worker JS runtime; spawned eagerly at first `RLottie.ts` import | Lazy spawn is the remaining win (§6.4) |
 | GramJS worker (`src/api/gramjs`) | `localDb` grow-only Records of TL class instances (H6); sender/auth maps bounded per-DC (≤ 5) | Out of scope (MTProto semantics); upstream LRU proposal in §4 rank 6 |
-| fastText (`src/lib/fasttextweb`) | 1.1 MB wasm (937 KB embedded language model), memory **defined in-binary, fixed min = max = 16 MB** — not growable, not glue-patchable without relocating data segments | Only spawns when the native `LanguageDetector` API is missing (i.e. not in Chromium), but then it spawns **4 s after boot unconditionally**, used or not — lazy-init on first `detectLanguage` is a free 17 MB on Firefox/Safari |
+| fastText (`src/lib/fasttextweb`) | 1.1 MB wasm (937 KB embedded language model), memory **defined in-binary, fixed min = max = 16 MB** — not growable, not glue-patchable without relocating data segments | Only spawns when the native `LanguageDetector` API is missing (i.e. not in Chromium); **now lazily initialized on first `detectLanguage`** — the 17 MB heap + 1.1 MB fetch are paid only when detection is actually used |
 | opus (`oggToWav`, Safari-only) | 2 workers per conversion, terminated after use | Clean |
 | lovelyChart, media editor, blur hooks (`useCanvasBlur`, `getCustomAppendixBg`) | Transient canvases, bounded by UI | Clean |
 | Teact/DOM | Falsified as a leak source (H4/H7): listeners and nodes track the 120-message window exactly | Clean |
