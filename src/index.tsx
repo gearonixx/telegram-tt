@@ -19,9 +19,11 @@ import { requestGlobal, subscribeToMultitabBroadcastChannel } from './util/brows
 import { establishMultitabRole, subscribeToMasterChange } from './util/establishMultitabRole';
 import { initGlobal } from './util/init';
 import { initLocalization } from './util/localization';
+import { Bundles, loadBundle } from './util/moduleLoader';
 import { MULTITAB_STORAGE_KEY } from './util/multiaccount';
 import { checkAndAssignPermanentWebVersion } from './util/permanentWebVersion';
 import { onBeforeUnload } from './util/schedulers';
+import { hasStoredSession } from './util/sessions';
 import initTauriApi from './util/tauri/initTauriApi';
 import setupTauriListeners from './util/tauri/setupTauriListeners';
 import updateWebmanifest from './util/updateWebmanifest';
@@ -46,6 +48,7 @@ async function init() {
   if (DEBUG) {
     // eslint-disable-next-line no-console
     console.log('>>> INIT');
+    performance.mark('boot:init');
   }
 
   if (!(window as any).isCompatTestPassed) return;
@@ -64,7 +67,17 @@ async function init() {
   });
 
   await initGlobal();
+  if (DEBUG) performance.mark('boot:global-hydrated');
+
+  // For a logged-in session the main screen is inevitable, so fetch the main
+  // bundle in parallel with the initial render instead of waiting for the
+  // `UiLoader` preload effect
+  if (getGlobal().auth.state === 'authorizationStateReady' || hasStoredSession()) {
+    void loadBundle(Bundles.Main);
+  }
+
   getActions().init();
+  if (DEBUG) performance.mark('boot:init-action');
 
   getActions().updateShouldEnableDebugLog();
   getActions().updateShouldDebugExportedSenders();
@@ -86,6 +99,7 @@ async function init() {
   }
 
   requestMutation(() => {
+    if (DEBUG) performance.mark('boot:render-start');
     updateWebmanifest();
 
     TeactDOM.render(
@@ -94,6 +108,7 @@ async function init() {
     );
 
     betterView();
+    if (DEBUG) performance.mark('boot:render-end');
   });
 
   if (DEBUG) {

@@ -8,6 +8,7 @@ import {
   DEBUG,
   FOLDERS_POSITION_DEFAULT,
   GLOBAL_STATE_CACHE_DISABLED,
+  IS_MOCKED_CLIENT,
   IS_SCREEN_LOCKED_CACHE_KEY,
   SHARED_STATE_CACHE_KEY,
 } from '../config';
@@ -107,7 +108,9 @@ export async function loadCache(initialState: GlobalState): Promise<GlobalState 
 
   const cache = await readCache(initialState);
 
-  if (cache.passcode.hasPasscode || hasStoredSession()) {
+  // The mocked client has no stored session; keep the cache so perf probes
+  // can exercise the real warm-boot hydration path
+  if (cache.passcode.hasPasscode || hasStoredSession() || IS_MOCKED_CLIENT) {
     setupCaching();
 
     return cache;
@@ -139,6 +142,7 @@ async function readCache(initialState: GlobalState): Promise<GlobalState> {
   if (DEBUG) {
     // eslint-disable-next-line no-console
     console.time('global-state-cache-read');
+    performance.mark('boot:cache-read-start');
   }
 
   const json = localStorage.getItem(GLOBAL_STATE_CACHE_KEY);
@@ -159,11 +163,13 @@ async function readCache(initialState: GlobalState): Promise<GlobalState> {
   if (DEBUG) {
     // eslint-disable-next-line no-console
     console.timeEnd('global-state-cache-read');
+    performance.mark('boot:cache-read-end');
   }
 
   if (cached) {
     migrateCache(cached, initialState);
   }
+  if (DEBUG && cached) performance.mark('boot:cache-migrated');
 
   const newState: GlobalState = {
     ...initialState,

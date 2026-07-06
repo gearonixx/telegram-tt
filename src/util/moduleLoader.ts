@@ -42,9 +42,13 @@ export async function loadBundle<B extends Bundles>(bundleName: B) {
         if (DEBUG) {
           // eslint-disable-next-line no-console
           console.log('>>> START LOAD MAIN BUNDLE');
+          performance.mark('boot:main-bundle-start');
         }
 
         LOAD_PROMISES[Bundles.Main] = import('../bundles/main');
+        if (DEBUG) {
+          void LOAD_PROMISES[Bundles.Main].then(() => performance.mark('boot:main-bundle-loaded'));
+        }
         break;
       case Bundles.Extra:
         LOAD_PROMISES[Bundles.Extra] = import('../bundles/extra');
