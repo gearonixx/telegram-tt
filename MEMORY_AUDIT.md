@@ -526,3 +526,49 @@ not bytes):
    entry; both are gateable.
 4. `fallback-*.js` (40 KB wire) is fetched on every boot before first paint —
    inline the most common strings or ship a slimmer auth-only pack.
+
+## 9. Session F (parallel round): open latency, crypto, CSS, startup, media splits
+
+Five orthogonal tracks run as isolated worktree agents (`perf/f-*`), merged on
+`perf/f-integration`, coordinated with the other sessions via the claim board.
+All numbers from the mocked scenario on a shared 16-core machine; ratios are
+the signal, dev-server absolutes are inflated.
+
+1. **Chat-open latency** (`perf/probe-open.mjs`, new): every chat open paid a
+   second synchronous full-list reflow — the footer/composer bottom inset was
+   written immediately before the scroll-restore clamp, dirtying layout
+   (`get/set scrollTop` ≈ 1.1 s self-time per 10 opens at 4× throttle).
+   `applyLastKnownBottomInset()` pre-applies the reserve in the mount layout
+   effect, so the first (unavoidable) layout already includes it. Warm open
+   245 → 145 ms (−41 %), long tasks per open 367 → 158 ms (−57 %) at 4×
+   throttle; `probe-scroll-anchor.mjs` clean; mispredictions self-correct via
+   the existing phase-4 write (perf fallback, not a correctness risk).
+2. **WASM AES core** (`src/lib/gramjs/crypto/wasm/`): freestanding clang
+   wasm32 AES-256 (no emscripten, fixed 2 MiB non-growable memory — the §6.6
+   trap is impossible by construction) with IGE and CTR layers, wired into
+   `IGE.ts`/`crypto.ts` behind an automatic, permanent JS fallback.
+   Bit-exact vs `@cryptography/aes` and OpenSSL across sizes and odd CTR
+   chunkings (`perf/bench-aes.mjs`); ~2.6–2.9× throughput (IGE dec ~105 →
+   ~305 MB/s), i.e. per-MB worker crypto CPU ~19 → ~6.9 ms on every MTProto
+   byte. Activates in `dist/` on the next build regeneration.
+3. **CSS / media queries**: the only repeated-`matchMedia`-allocation
+   patterns (media-viewer dimension helpers + per-mount listener) now share
+   one cached MQL. Census of the built CSS: 258 `@media` blocks, no orphaned
+   breakpoints, no `*`/`transition: all`, hover-during-scroll gating already
+   present — no recalc fix survived scrutiny (documented in the session
+   report; `prefers-reduced-motion` remains JS-driven, see
+   `perf/reduced-motion-default`).
+4. **Logged-in startup** (`perf/probe-coldstart.mjs`, new): falsified the
+   persisted-cache suspicion (IDB read+parse 8–25 ms, `migrateCache` 0.3 ms);
+   fixed mocked-mode cache discard so warm boots exercise the real hydration
+   path (chat rows render synchronously from cache at ChatList mount); main
+   bundle fetch now starts right after hydration instead of after the first
+   render (+35 → −15 ms render→fetch gap). Warm nav→chat-rows 1620 →
+   1077 ms (−34 %) on the corrected path. Top remaining lever: the ~260–330 ms
+   "rows → detected" tail (rest of the Main mount tree).
+5. **Media-feature lazy boundaries**: MediaEditor (65.7 + 10.5 KB) and the
+   instant-view content tree now load on demand via the existing `Bundles`
+   pattern; the eager chat chunk shrank by 86.3 KB raw / 24.1 KB gzip on
+   every session, verified end-to-end headlessly (0 editor/IV modules fetched
+   until used). Next candidate: MediaViewer/StoryViewer out of
+   `Bundles.Extra` (981 KB raw downloaded on first photo click today).
