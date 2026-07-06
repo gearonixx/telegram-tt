@@ -1,5 +1,7 @@
 import AES from '@cryptography/aes';
 
+import { AesWasmCtr, ensureAesWasm, getAesWasm } from './aesWasm';
+
 class Counter {
   public counter: Uint8Array;
 
@@ -45,7 +47,7 @@ class CTR {
     return this.encrypt(plainText);
   }
 
-  encrypt(plain: Uint8Array): Uint8Array {
+  encrypt(plain: Uint8Array): Uint8Array<ArrayBuffer> {
     const aes = this._aes;
     const ctr = this._counter;
 
@@ -104,14 +106,25 @@ class CTR {
   }
 }
 
-export type CtrImpl = CTR;
+export type CtrImpl = {
+  update(data: Uint8Array): Uint8Array<ArrayBuffer>;
+};
+
+// Prefers the WASM AES core once it is instantiated; until then (or if
+// instantiation failed) the pure-JS `CTR` above is used. Both are proven
+// bit-exact by perf/bench-aes.mjs
+function createCtr(key: Uint8Array, iv: Uint8Array): CtrImpl {
+  ensureAesWasm();
+  const wasm = getAesWasm();
+  return wasm ? new AesWasmCtr(wasm, key, iv) : new CTR(key, iv);
+}
 
 // endregion
 export function createDecipheriv(algorithm: string, key: Uint8Array, iv: Uint8Array) {
   if (algorithm.includes('ECB')) {
     throw new Error('Not supported');
   } else {
-    return new CTR(key, iv);
+    return createCtr(key, iv);
   }
 }
 
@@ -119,7 +132,7 @@ export function createCipheriv(algorithm: string, key: Uint8Array, iv: Uint8Arra
   if (algorithm.includes('ECB')) {
     throw new Error('Not supported');
   } else {
-    return new CTR(key, iv);
+    return createCtr(key, iv);
   }
 }
 

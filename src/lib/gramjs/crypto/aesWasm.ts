@@ -48,16 +48,16 @@ export class AesWasm {
   }
 
   // `data.length` must be a multiple of 16; enforced by callers
-  igeEncrypt(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Uint8Array {
+  igeEncrypt(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Uint8Array<ArrayBuffer> {
     return this.processIge(false, key, iv, data);
   }
 
-  igeDecrypt(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Uint8Array {
+  igeDecrypt(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Uint8Array<ArrayBuffer> {
     return this.processIge(true, key, iv, data);
   }
 
   // `state` is the caller-owned 36-byte CTR state blob; updated in place
-  ctrUpdate(key: Uint8Array, state: Uint8Array, data: Uint8Array): Uint8Array {
+  ctrUpdate(key: Uint8Array, state: Uint8Array, data: Uint8Array): Uint8Array<ArrayBuffer> {
     const {
       exports, heap, ioPtr, ioCapacity,
     } = this;
@@ -78,7 +78,7 @@ export class AesWasm {
     return out;
   }
 
-  private processIge(isDecrypt: boolean, key: Uint8Array, iv: Uint8Array, data: Uint8Array): Uint8Array {
+  private processIge(isDecrypt: boolean, key: Uint8Array, iv: Uint8Array, data: Uint8Array): Uint8Array<ArrayBuffer> {
     const {
       exports, heap, ioPtr, ioCapacity,
     } = this;
@@ -121,7 +121,7 @@ export class AesWasmCtr {
     this.state.set(iv);
   }
 
-  update(data: Uint8Array): Uint8Array {
+  update(data: Uint8Array): Uint8Array<ArrayBuffer> {
     return this.wasm.ctrUpdate(this.key, this.state, data);
   }
 }
