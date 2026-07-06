@@ -16,3 +16,6 @@ dev/perf/screenshot*
 perf/out/
 src/lib/gramjs/client/__data__/perf-photo.png
 tauri/target/
+
+# Claude Code harness (agent worktrees, local session state)
+.claude/
