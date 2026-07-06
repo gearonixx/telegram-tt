@@ -3,8 +3,16 @@ import type { TimeFormat } from '../../types';
 import type { LangFn } from '../localization';
 
 import { getServerTime } from '../serverTime';
-import withCache from '../withCache';
+import {
+  formatDateToString, formatFullDate, formatTime, getDayStart, getDayStartAt,
+} from './formatBasic';
 import { getDays, getHours, getMinutes } from './units';
+
+// Re-exported so the 30+ existing importers keep a single date-utils entry point;
+// the boot-critical subset lives in a lean module to stay off the boot static graph
+export {
+  formatDateToString, formatFullDate, formatTime, getDayStart, getDayStartAt,
+};
 
 const WEEKDAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS_FULL = [
@@ -22,16 +30,6 @@ export function isToday(date: Date) {
   return getDayStartAt(new Date()) === getDayStartAt(date);
 }
 
-export function getDayStart(datetime: number | Date) {
-  const date = new Date(datetime);
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
-export function getDayStartAt(datetime: number | Date) {
-  return getDayStart(datetime).getTime();
-}
-
 export function toYearMonth(timestamp: number) {
   const date = new Date(timestamp * 1000);
   return `${date.getFullYear()}-${date.getMonth()}`;
@@ -39,21 +37,6 @@ export function toYearMonth(timestamp: number) {
 
 function toIsoString(date: Date) {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-}
-
-// @optimization `toLocaleTimeString` is avoided because of bad performance
-export function formatTime(lang: OldLangFn, datetime: number | Date) {
-  const date = typeof datetime === 'number' ? new Date(datetime) : datetime;
-  const timeFormat = lang.timeFormat || '24h';
-
-  let hours = date.getHours();
-  let marker = '';
-  if (timeFormat === '12h') {
-    marker = hours >= 12 ? '\xa0PM' : '\xa0AM'; // NBSP
-    hours = hours > 12 ? hours % 12 : hours;
-  }
-
-  return `${String(hours).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}${marker}`;
 }
 
 export function formatPastTimeShort(lang: OldLangFn, datetime: number | Date, alwaysShowTime = false) {
@@ -77,10 +60,6 @@ export function formatPastTimeShort(lang: OldLangFn, datetime: number | Date, al
 
   const formattedDate = formatDateToString(date, lang.code, noYear);
   return alwaysShowTime ? lang('formatDateAtTime', [formattedDate, time]) : formattedDate;
-}
-
-export function formatFullDate(lang: OldLangFn | LangFn, datetime: number | Date) {
-  return formatDateToString(datetime, lang.code, false, 'numeric');
 }
 
 export function formatMonthAndYear(lang: OldLangFn | LangFn, date: Date, isShort = false) {
@@ -384,36 +363,6 @@ export function formatVoiceRecordDuration(durationInMs: number) {
   parts.push(String(seconds).padStart(2, '0'));
 
   return `${parts.join(':')},${String(milliseconds).padStart(2, '0')}`;
-}
-
-const formatDayToStringWithCache = withCache((
-  dayStartAt: number,
-  locale: string,
-  noYear?: boolean,
-  monthFormat: 'short' | 'long' | 'numeric' = 'short',
-  noDay?: boolean,
-) => {
-  return new Date(dayStartAt).toLocaleString(
-    locale,
-    {
-      year: noYear ? undefined : 'numeric',
-      month: monthFormat,
-      day: noDay ? undefined : 'numeric',
-    },
-  );
-});
-
-export function formatDateToString(
-  datetime: Date | number,
-  locale = 'en-US',
-  noYear = false,
-  monthFormat: 'short' | 'long' | 'numeric' = 'short',
-  noDay = false,
-) {
-  const date = typeof datetime === 'number' ? new Date(datetime) : datetime;
-  const dayStartAt = getDayStartAt(date);
-
-  return formatDayToStringWithCache(dayStartAt, locale, noYear, monthFormat, noDay);
 }
 
 export function formatDateTimeToString(
