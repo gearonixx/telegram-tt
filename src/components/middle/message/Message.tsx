@@ -177,7 +177,7 @@ import EmbeddedStory from '../../common/embedded/EmbeddedStory';
 import FakeIcon from '../../common/FakeIcon';
 import Icon from '../../common/icons/Icon';
 import StarIcon from '../../common/icons/StarIcon';
-import MessageRichText from '../../common/MessageRichText';
+import MessageRichText from '../../common/MessageRichText.async';
 import MessageText from '../../common/MessageText';
 import PeerColorWrapper from '../../common/PeerColorWrapper';
 import RankBadge from '../../common/RankBadge';
