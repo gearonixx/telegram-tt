@@ -288,6 +288,8 @@ const Main = ({
     DEBUG_isLogged = true;
     // eslint-disable-next-line no-console, @eslint-react/purity
     console.log('>>> RENDER MAIN');
+    // eslint-disable-next-line @eslint-react/purity
+    performance.mark('boot:main-render');
   }
 
   const lang = useLang();

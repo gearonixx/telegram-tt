@@ -125,11 +125,13 @@ const updateFolderManagerThrottled = throttle(() => {
 }, UPDATE_THROTTLE);
 
 let inited = false;
+let DEBUG_hasMarkedAllReady = false;
 
 /* Getters */
 
 export function init() {
   inited = true;
+  if (DEBUG) performance.mark('boot:folders-init');
 
   addCallback(updateFolderManagerThrottled);
   addActionHandler('reset', reset);
@@ -742,6 +744,10 @@ function updateResults(affectedFolderIds: number[]) {
       prepared.isOrderedListJustPatched[folderId] = false;
       results.orderedIdsByFolderId[folderId] = newOrderedIds;
       results.pinnedCountByFolderId[folderId] = newPinnedCount;
+      if (DEBUG && folderId === ALL_FOLDER_ID && newOrderedIds.length && !DEBUG_hasMarkedAllReady) {
+        DEBUG_hasMarkedAllReady = true;
+        performance.mark('boot:folders-ready');
+      }
       callbacks.orderedIdsByFolderId[folderId]?.runCallbacks(newOrderedIds);
     }
 

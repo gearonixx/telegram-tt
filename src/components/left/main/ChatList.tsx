@@ -11,6 +11,7 @@ import {
   ARCHIVED_FOLDER_ID,
   CHAT_HEIGHT_PX,
   CHAT_LIST_SLICE,
+  DEBUG,
   SAVED_FOLDER_ID,
 } from '../../../config';
 import { IS_APP, IS_MAC_OS } from '../../../util/browser/windowEnvironment';
@@ -58,6 +59,9 @@ type OwnProps = {
 
 const INTERSECTION_THROTTLE = 200;
 const RESERVED_HOTKEYS = new Set(['9', '0']);
+
+let DEBUG_hasMarkedFirstRender = false;
+let DEBUG_hasMarkedFirstRows = false;
 
 const ChatList = ({
   className,
@@ -199,6 +203,17 @@ const ChatList = ({
     isDisabled: isSaved,
     isOverscrolled: isStoryRibbonShown,
   });
+
+  if (DEBUG && !DEBUG_hasMarkedFirstRender) {
+    DEBUG_hasMarkedFirstRender = true;
+    // eslint-disable-next-line @eslint-react/purity
+    performance.mark('boot:chatlist-first');
+  }
+  if (DEBUG && !DEBUG_hasMarkedFirstRows && viewportIds?.length) {
+    DEBUG_hasMarkedFirstRows = true;
+    // eslint-disable-next-line @eslint-react/purity
+    performance.mark('boot:chatlist-rows');
+  }
 
   function renderChats() {
     const viewportOffset = orderedIds!.indexOf(viewportIds![0]);

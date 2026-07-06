@@ -39,11 +39,26 @@ const SEGMENTS = [
   ['init action', 'boot:global-hydrated', 'boot:init-action'],
   ['init-action → render', 'boot:init-action', 'boot:render-start'],
   ['TeactDOM.render', 'boot:render-start', 'boot:render-end'],
-  ['render → chat rows paint', 'boot:render-end', 'chatRows'],
+  ['render → main-bundle start', 'boot:render-end', 'boot:main-bundle-start'],
+  ['main bundle load', 'boot:main-bundle-start', 'boot:main-bundle-loaded'],
+  ['bundle → Main render', 'boot:main-bundle-loaded', 'boot:main-render'],
+  ['Main render → ChatList mount', 'boot:main-render', 'boot:chatlist-first'],
+  ['nav → folders-init', undefined, 'boot:folders-init'],
+  ['nav → folders-ready', undefined, 'boot:folders-ready'],
+  ['ChatList mount → rows', 'boot:chatlist-first', 'boot:chatlist-rows'],
+  ['ChatList rows → detected', 'boot:chatlist-rows', 'chatRows'],
   ['TOTAL nav → chat rows', undefined, 'chatRows'],
 ];
 
 async function capture(page) {
+  await page.addInitScript(() => {
+    window.__longTasks = [];
+    new PerformanceObserver((list) => {
+      for (const e of list.getEntries()) {
+        window.__longTasks.push({ start: Math.round(e.startTime), dur: Math.round(e.duration) });
+      }
+    }).observe({ entryTypes: ['longtask'] });
+  });
   const t0 = Date.now();
   await page.goto(URL, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector(CHAT_ROW, { timeout: 30000 });
@@ -51,12 +66,15 @@ async function capture(page) {
 
   const data = await page.evaluate(() => {
     const marks = {};
+    const allMarks = {};
     for (const m of performance.getEntriesByType('mark')) {
-      if (m.name.startsWith('boot:')) marks[m.name] = m.startTime;
+      if (!m.name.startsWith('boot:')) continue;
+      if (marks[m.name] === undefined) marks[m.name] = m.startTime;
+      (allMarks[m.name] ||= []).push(Math.round(m.startTime));
     }
     const paints = {};
     for (const p of performance.getEntriesByType('paint')) paints[p.name] = p.startTime;
-    return { marks, paints };
+    return { marks, allMarks, paints };
   });
   // Anchor chat-row paint on the page clock (approx via a fresh mark)
   const chatRows = await page.evaluate(() => {
@@ -65,6 +83,7 @@ async function capture(page) {
   });
   data.marks.chatRows = chatRows;
   data.wallChatRows = chatRowsAt;
+  data.longTasks = await page.evaluate(() => window.__longTasks);
   return data;
 }
 
@@ -80,6 +99,8 @@ async function runPass(label, makeContext, warm) {
   const rows = [];
   let fcp = [];
   let lastMarks;
+  let lastLongTasks;
+  let lastAllMarks;
   for (let i = 0; i < RUNS; i++) {
     const context = await makeContext();
     const page = await context.newPage();
@@ -97,6 +118,8 @@ async function runPass(label, makeContext, warm) {
       cold = await capture(page);
     }
     lastMarks = cold.marks;
+    lastLongTasks = cold.longTasks;
+    lastAllMarks = cold.allMarks;
     rows.push(cold.marks);
     if (cold.paints['first-contentful-paint']) fcp.push(cold.paints['first-contentful-paint']);
     await context.close();
@@ -111,6 +134,11 @@ async function runPass(label, makeContext, warm) {
     console.log(name.padEnd(28), median(vals).toFixed(1).padStart(8));
   }
   if (fcp.length) console.log('FCP'.padEnd(28), median(fcp).toFixed(1).padStart(8));
+  console.log('long tasks (last run):', (lastLongTasks || []).map((t) => `${t.start}+${t.dur}ms`).join('  ') || 'none');
+  const repeated = Object.entries(lastAllMarks || {}).filter(([, times]) => times.length > 1);
+  if (repeated.length) {
+    console.log('repeated marks (last run):', repeated.map(([n, t]) => `${n}@[${t.join(',')}]`).join('  '));
+  }
 }
 
 await runPass('COLD (fresh storage)', () => browser.newContext(), false);
