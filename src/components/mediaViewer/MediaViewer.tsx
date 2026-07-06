@@ -49,7 +49,7 @@ import { IS_MAC_OS } from '../../util/browser/windowEnvironment';
 import captureKeyboardListeners from '../../util/captureKeyboardListeners';
 import { disableDirectTextInput, enableDirectTextInput } from '../../util/directInputManager';
 import { isUserId } from '../../util/entities/ids';
-import { MEDIA_VIEWER_MEDIA_QUERY } from '../common/helpers/mediaDimensions';
+import { MEDIA_VIEWER_MQL } from '../common/helpers/mediaDimensions';
 import { renderMessageText } from '../common/helpers/renderMessageText';
 import { getMediaViewerItem, type MediaViewerItem, type ViewableMedia } from './helpers/getViewableMedia';
 import selectViewableMedia from './helpers/getViewableMedia';
@@ -226,11 +226,10 @@ const MediaViewer = ({
 
   const forceUpdate = useForceUpdate();
   useEffect(() => {
-    const mql = window.matchMedia(MEDIA_VIEWER_MEDIA_QUERY);
-    mql.addEventListener('change', forceUpdate);
+    MEDIA_VIEWER_MQL.addEventListener('change', forceUpdate);
 
     return () => {
-      mql.removeEventListener('change', forceUpdate);
+      MEDIA_VIEWER_MQL.removeEventListener('change', forceUpdate);
     };
   }, [forceUpdate]);
 

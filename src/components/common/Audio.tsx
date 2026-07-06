@@ -92,8 +92,8 @@ type StateProps = {
   webPage?: ApiWebPage;
 };
 
-export const TINY_SCREEN_WIDTH_MQL = window.matchMedia('(max-width: 375px)');
-export const WITH_AVATAR_TINY_SCREEN_WIDTH_MQL = window.matchMedia('(max-width: 410px)');
+const TINY_SCREEN_WIDTH_MQL = window.matchMedia('(max-width: 375px)');
+const WITH_AVATAR_TINY_SCREEN_WIDTH_MQL = window.matchMedia('(max-width: 410px)');
 const AVG_VOICE_DURATION = 10;
 // This is needed for browsers requiring user interaction before playing.
 const PRELOAD = true;

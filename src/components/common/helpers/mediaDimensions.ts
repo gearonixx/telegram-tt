@@ -7,7 +7,7 @@ import { getPhotoInlineDimensions, getVideoDimensions } from '../../../global/he
 import { IS_TOUCH_ENV } from '../../../util/browser/windowEnvironment';
 import windowSize from '../../../util/windowSize';
 
-export const MEDIA_VIEWER_MEDIA_QUERY = '(max-height: 640px)';
+export const MEDIA_VIEWER_MQL = window.matchMedia('(max-height: 640px)');
 export const REM = parseInt(getComputedStyle(document.documentElement).fontSize, 10);
 export const ROUND_VIDEO_DIMENSIONS_PX = 240;
 export const GIF_MIN_WIDTH = 300;
@@ -109,11 +109,11 @@ export function calculateDimensionsForMessageMedia({
 }
 
 export function getMediaViewerAvailableDimensions(withFooter: boolean, isVideo: boolean): ApiDimensions {
-  const mql = window.matchMedia(MEDIA_VIEWER_MEDIA_QUERY);
+  const isCompactHeight = MEDIA_VIEWER_MQL.matches;
   const { width: windowWidth, height: windowHeight } = windowSize.get();
-  let occupiedHeightRem = isVideo && mql.matches ? 10 : 8.25;
+  let occupiedHeightRem = isVideo && isCompactHeight ? 10 : 8.25;
   if (withFooter && !IS_TOUCH_ENV) {
-    occupiedHeightRem = mql.matches ? 10 : 12.5;
+    occupiedHeightRem = isCompactHeight ? 10 : 12.5;
   }
   return {
     width: windowWidth,

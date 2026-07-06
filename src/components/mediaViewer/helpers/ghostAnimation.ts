@@ -13,7 +13,7 @@ import windowSize from '../../../util/windowSize';
 import {
   calculateDimensions,
   getMediaViewerAvailableDimensions,
-  MEDIA_VIEWER_MEDIA_QUERY,
+  MEDIA_VIEWER_MQL,
   REM,
 } from '../../common/helpers/mediaDimensions';
 
@@ -297,10 +297,9 @@ function isMessageImageFullyVisible(imageEl: HTMLElement) {
 }
 
 function getTopOffset(hasFooter: boolean) {
-  const mql = window.matchMedia(MEDIA_VIEWER_MEDIA_QUERY);
   let topOffsetRem = 4.125;
   if (hasFooter && !IS_TOUCH_ENV) {
-    topOffsetRem += mql.matches ? 0.875 : 2.125;
+    topOffsetRem += MEDIA_VIEWER_MQL.matches ? 0.875 : 2.125;
   }
 
   return topOffsetRem * REM;
