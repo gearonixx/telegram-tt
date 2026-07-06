@@ -55,7 +55,15 @@ const SUPPORTED_LANGUAGES: Record<string, string[]> = {
 
 const THIRD_PARTY_LANGUAGES = ['typelanguage'];
 
-const LANGUAGE_MODULES = import.meta.glob('../../node_modules/highlight.js/lib/languages/*.js') as Record<
+// Only enumerate languages listed in `SUPPORTED_LANGUAGES`; a broad `*.js` glob
+// emits a lazy chunk for every one of highlight.js's ~190 bundled grammars
+// (mathematica, gml, isbl, …), none of which this app can ever load
+// Only enumerate languages listed in `SUPPORTED_LANGUAGES`; a broad `*.js` glob
+// emits a lazy chunk for every one of highlight.js's ~190 bundled grammars
+// (mathematica, gml, isbl, …), none of which this app can ever load.
+// The pattern must stay a single string literal so Vite can statically analyze it
+// eslint-disable-next-line @stylistic/max-len
+const LANGUAGE_MODULES = import.meta.glob('../../node_modules/highlight.js/lib/languages/{1c,ada,arduino,arm,bash,basic,c,cpp,csharp,css,dart,dockerfile,erlang,elixir,go,handlebars,haskell,ini,java,javascript,json,kotlin,lisp,lua,makefile,markdown,matlab,nginx,objectivec,perl,php,powershell,python,r,ruby,rust,scheme,scss,shell,smalltalk,sql,swift,twig,typescript,xml,yaml}.js') as Record<
   string,
   () => Promise<{ default: any }>
 >;
