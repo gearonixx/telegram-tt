@@ -14,6 +14,8 @@ const MIN_DETECTABLE_RATIO = 0.6;
 
 const THROTTLE_DELAY = 1000;
 const MESSAGES_LIMIT = 150;
+// Only the most recently active chats need a translation decision kept around
+const CHATS_LIMIT = 50;
 
 type MessageMetadata = {
   id: number;
@@ -21,7 +23,7 @@ type MessageMetadata = {
   detectedLanguage: string | undefined;
 };
 
-const CHAT_STATS = new Map<string, LimitedMap<number, MessageMetadata>>();
+const CHAT_STATS = new LimitedMap<string, LimitedMap<number, MessageMetadata>>(CHATS_LIMIT);
 
 export default function useDetectChatLanguage(
   message: ApiMessage, detectedLanguage?: string, isDisabled?: boolean, getIsReady?: Signal<boolean>,
