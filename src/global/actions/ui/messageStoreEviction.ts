@@ -5,8 +5,8 @@ import {
   MESSAGE_STORE_EVICTION_INTERVAL,
   MESSAGE_STORE_EVICTION_MIN_IDLE,
 } from '../../../config';
-import { trimChatMessages } from '../../reducers/messages';
 import { addActionHandler, getActions } from '../../index';
+import { trimChatMessages } from '../../reducers/messages';
 import { selectCurrentMessageList } from '../../selectors/messages';
 import { selectTabState } from '../../selectors/tabs';
 

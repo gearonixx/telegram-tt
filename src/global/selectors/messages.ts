@@ -5,7 +5,7 @@ import type {
   ApiMessageEntityCustomEmoji,
   ApiMessageForwardInfo,
   ApiMessageOutgoingStatus,
-  ApiPeer, ApiRestrictionReason, ApiSponsoredMessage,
+  ApiPeer, ApiSponsoredMessage,
   ApiStickerSetInfo,
   MediaContainer,
 } from '../../api/types';
@@ -25,7 +25,6 @@ import { ApiMessageEntityTypes, MAIN_THREAD_ID } from '../../api/types';
 import {
   GENERAL_TOPIC_ID,
   SERVICE_NOTIFICATIONS_USER_ID,
-  WEB_APP_PLATFORM,
 } from '../../config';
 import { IS_TRANSLATION_SUPPORTED } from '../../util/browser/windowEnvironment';
 import { isUserId } from '../../util/entities/ids';
@@ -1481,20 +1480,4 @@ export function selectReplyMessage<T extends GlobalState>(global: T, message: Ap
     ? selectChatMessage(global, replyToPeerId || message.chatId, replyToMsgId) : undefined;
 
   return replyMessage;
-}
-
-export function selectActiveRestrictionReasons<T extends GlobalState>(
-  global: T, restrictionReasons?: ApiRestrictionReason[],
-): ApiRestrictionReason[] {
-  if (!restrictionReasons) return [];
-
-  const { ignoreRestrictionReasons } = global.appConfig;
-
-  return restrictionReasons.filter((reason) => {
-    const isForCurrentPlatform = reason.platform === 'all' || reason.platform === WEB_APP_PLATFORM;
-    if (!isForCurrentPlatform) return false;
-
-    const shouldIgnore = ignoreRestrictionReasons?.includes(reason.reason);
-    return !shouldIgnore;
-  });
 }

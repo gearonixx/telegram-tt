@@ -309,10 +309,6 @@ export function isMessageFailed(message: ApiMessage) {
   return message.sendingState === 'messageSendingStateFailed';
 }
 
-export function isHistoryClearMessage(message: ApiMessage) {
-  return message.content.action && message.content.action.type === 'historyClear';
-}
-
 export function isGeoLiveExpired(message: ApiMessage) {
   const { location } = message.content;
   if (location?.mediaType !== 'geoLive') return false;

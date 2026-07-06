@@ -14,9 +14,8 @@ import {
   getWebPageVideo,
 } from '../helpers/messageMedia';
 import { getMessageSingleCustomEmoji, getMessageSingleRegularEmoji } from '../helpers/messages';
-import { selectChat } from './chats';
+import { selectActiveRestrictionReasons, selectChat } from './chats';
 import {
-  selectActiveRestrictionReasons,
   selectReplyMessage,
   selectWebPageFromMessage,
 } from './messages';

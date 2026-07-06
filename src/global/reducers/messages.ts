@@ -29,12 +29,12 @@ import { getAllMessageMediaHashes, isMediaLoadableInViewer } from '../helpers/me
 import {
   getMessageStatefulContent, groupMessageIdsByThreadId, hasMessageTtl, mergeIdRanges, orderHistoryIds, orderPinnedIds,
 } from '../helpers/messages';
+import { selectChatLastMessageId } from '../selectors/chats';
 import {
   selectChatMessage, selectChatMessages, selectChatScheduledMessages, selectCurrentMessageIds, selectCurrentMessageList,
   selectListedIds, selectMessageIdsByGroupId, selectOutlyingLists, selectPinnedIds, selectPoll, selectQuickReplyMessage,
   selectScheduledMessage, selectViewportIds, selectWebPage,
 } from '../selectors/messages';
-import { selectChatLastMessageId } from '../selectors/chats';
 import { selectTabState } from '../selectors/tabs';
 import { selectThreadIdFromMessage, selectThreadInfo, selectThreadLocalStateParam } from '../selectors/threads';
 import { removeUnreadMentions } from './chats';

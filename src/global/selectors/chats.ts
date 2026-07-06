@@ -1,11 +1,12 @@
 import type {
-  ApiChat, ApiChatFullInfo, ApiChatType,
+  ApiChat, ApiChatFullInfo, ApiChatType, ApiRestrictionReason,
 } from '../../api/types';
 import type { ChatListType } from '../../types';
 import type { GlobalState, TabArgs } from '../types';
 
 import {
   ALL_FOLDER_ID, ARCHIVED_FOLDER_ID, MEMBERS_LOAD_SLICE, SAVED_FOLDER_ID, SERVICE_NOTIFICATIONS_USER_ID,
+  WEB_APP_PLATFORM,
 } from '../../config';
 import { IS_TRANSLATION_SUPPORTED } from '../../util/browser/windowEnvironment';
 import { isUserId } from '../../util/entities/ids';
@@ -13,9 +14,7 @@ import { getCurrentTabId } from '../../util/establishMultitabRole';
 import {
   getHasAdminRight, isChatAdmin, isChatChannel, isChatPublic, isChatSuperGroup, isUserRightBanned,
 } from '../helpers/chats';
-import { isHistoryClearMessage } from '../helpers/messages';
 import { isUserBot, isUserOnline } from '../helpers/users';
-import { selectActiveRestrictionReasons } from './messages';
 import { selectTabState } from './tabs';
 import {
   selectBot, selectIsCurrentUserPremium, selectUser, selectUserFullInfo,
@@ -108,7 +107,7 @@ export function selectIsChatBotNotStarted<T extends GlobalState>(global: T, chat
   }
 
   const lastMessage = selectChatLastMessage(global, chatId);
-  if (lastMessage && isHistoryClearMessage(lastMessage)) {
+  if (lastMessage && lastMessage.content.action?.type === 'historyClear') {
     return true;
   }
 
@@ -357,6 +356,22 @@ export function selectMonoforumChannel<T extends GlobalState>(
   if (!chat) return;
 
   return chat.isMonoforum ? selectChat(global, chat.linkedMonoforumId!) : undefined;
+}
+
+export function selectActiveRestrictionReasons<T extends GlobalState>(
+  global: T, restrictionReasons?: ApiRestrictionReason[],
+): ApiRestrictionReason[] {
+  if (!restrictionReasons) return [];
+
+  const { ignoreRestrictionReasons } = global.appConfig;
+
+  return restrictionReasons.filter((reason) => {
+    const isForCurrentPlatform = reason.platform === 'all' || reason.platform === WEB_APP_PLATFORM;
+    if (!isForCurrentPlatform) return false;
+
+    const shouldIgnore = ignoreRestrictionReasons?.includes(reason.reason);
+    return !shouldIgnore;
+  });
 }
 
 export function selectIsChatRestricted<T extends GlobalState>(global: T, chatId: string): boolean {

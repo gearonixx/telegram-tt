@@ -51,8 +51,8 @@ import {
   selectUser,
   selectUserFullInfo,
 } from '../../global/selectors';
-import { selectIsChatRestricted } from '../../global/selectors/chats';
-import { selectActiveRestrictionReasons, selectCurrentMessageList } from '../../global/selectors/messages';
+import { selectActiveRestrictionReasons, selectIsChatRestricted } from '../../global/selectors/chats';
+import { selectCurrentMessageList } from '../../global/selectors/messages';
 import {
   selectLastScrollOffset,
   selectScrollOffset,
