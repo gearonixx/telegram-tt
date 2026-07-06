@@ -1,4 +1,11 @@
-const cache = new WeakMap<AnyFunction, Map<string, any>>();
+import LimitedMap from './primitives/LimitedMap';
+
+// Caps each memoized function at a fixed number of distinct argument
+// combinations, so long sessions (many chats/dates/titles seen) don't grow
+// these caches without bound.
+const CACHE_ENTRIES_LIMIT = 300;
+
+const cache = new WeakMap<AnyFunction, LimitedMap<string, any>>();
 
 export default function withCache<T extends AnyFunction>(fn: T) {
   return (...args: Parameters<T>): ReturnType<T> => {
@@ -11,7 +18,7 @@ export default function withCache<T extends AnyFunction>(fn: T) {
         return cached;
       }
     } else {
-      fnCache = new Map();
+      fnCache = new LimitedMap(CACHE_ENTRIES_LIMIT);
       cache.set(fn, fnCache);
     }
 
