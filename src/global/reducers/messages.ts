@@ -20,22 +20,26 @@ import { areDeepEqual } from '../../util/areDeepEqual';
 import { addTimestampEntities } from '../../util/dates/timestamp';
 import { getCurrentTabId } from '../../util/establishMultitabRole';
 import {
-  areSortedArraysEqual, excludeSortedArray, omit, omitUndefined, pick, pickTruthy, unique,
+  areSortedArraysEqual, compact, excludeSortedArray, omit, omitUndefined, pick, pickTruthy, unique,
 } from '../../util/iteratees';
 import { isLocalMessageId, type MessageKey } from '../../util/keys/messageKey';
 import { unload } from '../../util/mediaLoader';
+import { markChatMessagesActive } from '../chatMessagesActivity';
 import { getEmojiOnlyCountForMessage } from '../helpers/getEmojiOnlyCountForMessage';
 import { getAllMessageMediaHashes, isMediaLoadableInViewer } from '../helpers/messageMedia';
 import {
   getMessageStatefulContent, groupMessageIdsByThreadId, hasMessageTtl, mergeIdRanges, orderHistoryIds, orderPinnedIds,
 } from '../helpers/messages';
+import { selectChatLastMessageId } from '../selectors/chats';
 import {
   selectChatMessage, selectChatMessages, selectChatScheduledMessages, selectCurrentMessageIds, selectCurrentMessageList,
   selectListedIds, selectMessageIdsByGroupId, selectOutlyingLists, selectPinnedIds, selectPoll, selectQuickReplyMessage,
   selectScheduledMessage, selectViewportIds, selectWebPage,
 } from '../selectors/messages';
 import { selectTabState } from '../selectors/tabs';
-import { selectThreadIdFromMessage, selectThreadInfo, selectThreadLocalStateParam } from '../selectors/threads';
+import {
+  selectTabThreadParam, selectThreadIdFromMessage, selectThreadInfo, selectThreadLocalStateParam,
+} from '../selectors/threads';
 import { removeUnreadMentions } from './chats';
 import { updateMessageStore } from './messageStore';
 import { removeIdFromSearchResults } from './middleSearch';
@@ -84,6 +88,10 @@ export function updateCurrentMessageList<T extends GlobalState>(
     }
   } else {
     newMessageLists = messageLists.slice(0, -1);
+  }
+
+  if (chatId) {
+    markChatMessagesActive(chatId);
   }
 
   return updateTabState(global, {
@@ -418,6 +426,95 @@ export function deleteChatMessages<T extends GlobalState>(
   global = replaceChatMessages(global, chatId, newById);
 
   return global;
+}
+
+// Only chats with a plain (non-forum, non-comments) thread tree are evicted: topics/comment
+// threads carry their own `threadInfo`/`readState` that this reducer does not attempt to
+// reduce safely, so chats that have grown extra threads are left for a future iteration.
+export function canEvictChatMessages<T extends GlobalState>(global: T, chatId: string): boolean {
+  const current = global.messages.byChatId[chatId];
+  if (!current || !Object.keys(current.byId).length) {
+    return false;
+  }
+
+  if (chatId === global.currentUserId) {
+    return false;
+  }
+
+  const hasExtraThreads = Object.keys(current.threadsById).some((key) => Number(key) !== MAIN_THREAD_ID);
+  if (hasExtraThreads) {
+    return false;
+  }
+
+  const mainThreadLocalState = current.threadsById[MAIN_THREAD_ID]?.localState;
+  if (mainThreadLocalState) {
+    const {
+      draft, editingId, editingDraft, editingScheduledDraft, editingScheduledId,
+    } = mainThreadLocalState;
+    if (draft || editingId !== undefined || editingDraft || editingScheduledDraft || editingScheduledId !== undefined) {
+      return false;
+    }
+  }
+
+  return !Object.values(current.byId).some((message) => message.sendingState);
+}
+
+// Shrinks an inactive chat's in-memory message slice down to the subset the cache serializer
+// would persist (`cacheSerializer.ts`): the last message (for chat-list previews) plus the last
+// known viewport (for a same-shape reopen). Everything else refetches on next visit instead of
+// staying pinned in memory for the lifetime of the tab. Caller must have checked
+// `canEvictChatMessages` first.
+export function evictChatMessages<T extends GlobalState>(global: T, chatId: string): T {
+  const current = global.messages.byChatId[chatId];
+  if (!current) {
+    return global;
+  }
+
+  const mainThread = current.threadsById[MAIN_THREAD_ID];
+  const chatLastMessageId = selectChatLastMessageId(global, chatId);
+  const keepMessageIds = unique(compact([chatLastMessageId, ...(mainThread?.localState?.lastViewportIds || [])]));
+  const removedMessageIds = Object.keys(current.byId)
+    .map(Number)
+    .filter((id) => !keepMessageIds.includes(id));
+
+  removedMessageIds.forEach((id) => {
+    const message = current.byId[id];
+    const statefulContent = getMessageStatefulContent(global, message);
+    getAllMessageMediaHashes(message, statefulContent).forEach((hash) => {
+      unload(hash);
+    });
+  });
+
+  // Keep every tab's remembered viewport a subset of what survives eviction, so a backgrounded
+  // tab that had this chat open with a different scroll position can't end up pointing at ids
+  // that no longer exist in `byId`
+  Object.values(global.byTabId).forEach(({ id: tabId }) => {
+    const viewportIds = selectTabThreadParam(global, chatId, MAIN_THREAD_ID, 'viewportIds', tabId);
+    if (!viewportIds) return;
+
+    const newViewportIds = excludeSortedArray(viewportIds, removedMessageIds);
+    global = replaceTabThreadParam(
+      global, chatId, MAIN_THREAD_ID, 'viewportIds', newViewportIds.length ? newViewportIds : undefined, tabId,
+    );
+  });
+
+  const updatedMainThread = global.messages.byChatId[chatId]?.threadsById[MAIN_THREAD_ID];
+
+  return updateMessageStore(global, chatId, {
+    byId: pick(current.byId, keepMessageIds),
+    threadsById: updatedMainThread ? {
+      [MAIN_THREAD_ID]: {
+        ...updatedMainThread,
+        localState: {
+          ...updatedMainThread.localState,
+          listedIds: updatedMainThread.localState?.lastViewportIds,
+          outlyingLists: undefined,
+          pinnedIds: undefined,
+        },
+      },
+    } : {},
+    summaryById: {},
+  });
 }
 
 export function deleteChatScheduledMessages<T extends GlobalState>(

@@ -86,6 +86,11 @@ export const MIN_PASSWORD_LENGTH = 1;
 export const MESSAGE_LIST_SLICE = isBigScreen ? 60 : 40;
 export const MESSAGE_LIST_VIEWPORT_LIMIT = MESSAGE_LIST_SLICE * 2;
 
+// Evict a chat's in-memory `messages.byChatId` slice once it has been closed in every tab for
+// longer than this; `0` disables eviction. See `reducers/messages.ts#evictChatMessages`
+export const MESSAGE_STORE_EVICT_AFTER_MS = 10 * 60 * 1000;
+export const MESSAGE_STORE_EVICT_SWEEP_INTERVAL_MS = 60 * 1000;
+
 export const ARCHIVE_MINIMIZED_HEIGHT = 36;
 export const CHAT_HEIGHT_PX = 72;
 export const TOPIC_HEIGHT_PX = 65;
