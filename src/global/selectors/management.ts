@@ -5,7 +5,7 @@ import { getCurrentTabId } from '../../util/establishMultitabRole';
 import { isAnonymousForwardsChat, isChatAdmin, isChatGroup } from '../helpers/chats';
 import { getCanAddContact, isUserBot } from '../helpers/users';
 import { selectChat, selectIsChatRestricted, selectIsChatWithSelf } from './chats';
-import { selectCurrentMessageList } from './messages';
+import { selectCurrentMessageList } from './currentMessageList';
 import { selectTabState } from './tabs';
 import { selectBot, selectUser } from './users';
 

@@ -61,6 +61,7 @@ import {
   selectIsChatWithSelf,
   selectRequestedChatTranslationLanguage,
 } from './chats';
+import { selectCurrentMessageList } from './currentMessageList';
 import { selectCurrentLimit } from './limits';
 import { selectMessageDownloadableMedia } from './media';
 import { selectPeer, selectPeerPaidMessagesStars } from './peers';
@@ -82,18 +83,7 @@ import {
   selectBot, selectIsUserChatProtected, selectUser, selectUserStatus,
 } from './users';
 
-export function selectCurrentMessageList<T extends GlobalState>(
-  global: T,
-  ...[tabId = getCurrentTabId()]: TabArgs<T>
-) {
-  const { messageLists } = selectTabState(global, tabId);
-
-  if (messageLists.length) {
-    return messageLists[messageLists.length - 1];
-  }
-
-  return undefined;
-}
+export { selectCurrentMessageList } from './currentMessageList';
 
 export function selectCurrentChat<T extends GlobalState>(
   global: T,

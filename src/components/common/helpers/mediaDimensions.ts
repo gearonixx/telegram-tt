@@ -6,14 +6,9 @@ import { STICKER_SIZE_INLINE_DESKTOP_FACTOR, STICKER_SIZE_INLINE_MOBILE_FACTOR }
 import { getPhotoInlineDimensions, getVideoDimensions } from '../../../global/helpers/messageMedia';
 import { IS_TOUCH_ENV } from '../../../util/browser/windowEnvironment';
 import windowSize from '../../../util/windowSize';
+import { GIF_MIN_WIDTH, LIKE_STICKER_ID, MEDIA_VIEWER_MEDIA_QUERY, REM } from './mediaDimensionsConstants';
 
-export const MEDIA_VIEWER_MEDIA_QUERY = '(max-height: 640px)';
-export const REM = parseInt(getComputedStyle(document.documentElement).fontSize, 10);
-export const ROUND_VIDEO_DIMENSIONS_PX = 240;
-export const GIF_MIN_WIDTH = 300;
-export const AVATAR_FULL_DIMENSIONS = { width: 640, height: 640 };
-export const VIDEO_AVATAR_FULL_DIMENSIONS = { width: 800, height: 800 };
-export const LIKE_STICKER_ID = '4986041492570112461';
+export * from './mediaDimensionsConstants';
 
 const DEFAULT_MEDIA_DIMENSIONS: ApiDimensions = { width: 100, height: 100 };
 const MOBILE_SCREEN_NO_AVATARS_MESSAGE_EXTRA_WIDTH_REM = 4.5;

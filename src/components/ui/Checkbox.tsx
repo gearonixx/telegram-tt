@@ -12,7 +12,7 @@ import type { IconName } from '../../types/icons';
 import type { IRadioOption } from './CheckboxGroup';
 
 import buildClassName from '../../util/buildClassName';
-import { REM } from '../common/helpers/mediaDimensions';
+import { REM } from '../common/helpers/mediaDimensionsConstants';
 import renderText from '../common/helpers/renderText';
 
 import useCurrentOrPrev from '../../hooks/useCurrentOrPrev';

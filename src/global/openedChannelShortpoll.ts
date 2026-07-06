@@ -3,7 +3,7 @@ import type { GlobalState } from './types';
 
 import { callApi } from '../api/gramjs';
 import { isChatChannel, isChatSuperGroup } from './helpers/chats';
-import { selectCurrentMessageList } from './selectors/messages';
+import { selectCurrentMessageList } from './selectors/currentMessageList';
 import { selectTabState } from './selectors/tabs';
 
 const MAX_OPENED_CHANNELS = 10;
