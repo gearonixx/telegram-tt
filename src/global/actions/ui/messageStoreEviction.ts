@@ -1,11 +1,12 @@
 import type { ActionReturnType } from '../../types';
 
 import {
+  DEBUG,
   MESSAGE_STORE_EVICTION_ENABLED,
   MESSAGE_STORE_EVICTION_INTERVAL,
   MESSAGE_STORE_EVICTION_MIN_IDLE,
 } from '../../../config';
-import { addActionHandler, getActions } from '../../index';
+import { addActionHandler, getActions, getGlobal } from '../../index';
 import { trimChatMessages } from '../../reducers/messages';
 import { selectCurrentMessageList } from '../../selectors/messages';
 import { selectTabState } from '../../selectors/tabs';
@@ -55,4 +56,21 @@ if (MESSAGE_STORE_EVICTION_ENABLED) {
   setInterval(() => {
     getActions().trimMessageStore();
   }, MESSAGE_STORE_EVICTION_INTERVAL);
+}
+
+// Harness hooks: report the runtime message-store footprint and force a sweep
+if (DEBUG && typeof window !== 'undefined') {
+  (window as any).__messageStoreStats = () => {
+    const global = getGlobal();
+    const { byChatId } = global.messages;
+    const chatIds = Object.keys(byChatId);
+    let totalMessages = 0;
+    for (const chatId of chatIds) {
+      totalMessages += Object.keys(byChatId[chatId].byId).length;
+    }
+    return { chats: chatIds.length, totalMessages };
+  };
+  (window as any).__trimMessageStore = () => {
+    getActions().trimMessageStore();
+  };
 }
