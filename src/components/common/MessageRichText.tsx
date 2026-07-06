@@ -23,7 +23,7 @@ import Button from '../ui/Button';
 
 import styles from './MessageRichText.module.scss';
 
-type OwnProps = {
+export type OwnProps = {
   message: ApiMessage;
   threadId?: ThreadId;
   isOwn?: boolean;
