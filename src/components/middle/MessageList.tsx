@@ -73,6 +73,7 @@ import { REM } from '../common/helpers/mediaDimensions';
 import { groupMessages } from './helpers/groupMessages';
 import { requestMessageListReflow } from './helpers/messageListReflow';
 import {
+  applyLastKnownBottomInset,
   applyMessageListBottomInset,
   getMessageListBottomReserve,
   getMessageListTopReserve,
@@ -825,6 +826,11 @@ const MessageList = ({
     }
 
     const container = containerRef.current!;
+    if (prevMessageIds === undefined) {
+      // Fresh list mount: include the bottom inset in the upcoming first
+      // layout so the reflow's mutation phase does not have to redo it
+      applyLastKnownBottomInset(container);
+    }
     listItemElementsRef.current = Array.from(container.querySelectorAll<HTMLDivElement>('.message-list-item'));
     const lastItemElement = listItemElementsRef.current[listItemElementsRef.current.length - 1];
     const firstUnreadElement = memoFirstUnreadIdRef.current
