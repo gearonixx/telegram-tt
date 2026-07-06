@@ -13,9 +13,9 @@ import type { RequiredGlobalActions } from '../../index';
 import type { ActionReturnType, GlobalState } from '../../types';
 
 import { getCurrentTabId } from '../../../util/establishMultitabRole';
-import { getShippingError, shouldClosePaymentModal } from '../../../util/getReadableErrorText';
 import { getAccountsInfo, getAccountSlotUrl } from '../../../util/multiaccount';
 import { oldSetLanguage } from '../../../util/oldLangProvider';
+import { getShippingError, shouldClosePaymentModal } from '../../../util/paymentErrors';
 import { clearWebTokenAuth } from '../../../util/routing';
 import { setServerTimeOffset } from '../../../util/serverTime';
 import { updateSessionUserId } from '../../../util/sessions';
