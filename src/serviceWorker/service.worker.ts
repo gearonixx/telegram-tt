@@ -1,7 +1,8 @@
 import { DEBUG } from '../config';
 import { pause } from '../util/schedulers';
 import {
-  precacheBootAssets, pruneAssetCache, respondWithCache, respondWithCacheNetworkFirst,
+  precacheBootAssets, pruneAssetCache, respondWithCache,
+  respondWithCacheNetworkFirst, respondWithCacheStaleFirst,
 } from './assetCache';
 import { respondForDownload } from './download';
 import { respondForProgressive } from './progressive';
@@ -15,7 +16,12 @@ import { handleClientMessage as handleShareMessage, respondForShare } from './sh
 declare const self: ServiceWorkerGlobalScope;
 
 const CACHE_FIRST_ASSET_EXTENSIONS = 'js|css|woff2?|svg|png|jpe?g|tgs|json|wasm';
-const RE_NETWORK_FIRST_ASSETS = /\.(wasm|html)$/;
+// `.wasm` stays network-first: it is refetched on every deploy and correctness
+// matters more than the round trip (it loads well after the auth screen)
+const RE_NETWORK_FIRST_ASSETS = /\.wasm$/;
+// The unhashed app shell served stale-while-revalidate — instant on a repeat
+// visit, with the newest copy picked up on the next load
+const RE_STALE_FIRST_SHELL = /(?:\.html|\/(?:redirect|compatTest)\.js)$/;
 const RE_CACHE_FIRST_ASSETS = new RegExp(
   `(?:/assets/[^/]+|/(?:[^/]+\\.)?worker|/index)-[\\w-]{8}`
   + `\\.(${CACHE_FIRST_ASSET_EXTENSIONS})$`,
@@ -79,7 +85,12 @@ self.addEventListener('fetch', (e: FetchEvent) => {
   }
 
   if (protocol === 'http:' || protocol === 'https:') {
-    if (pathname === scopePathname || pathname.match(RE_NETWORK_FIRST_ASSETS)) {
+    if (pathname === scopePathname || pathname.match(RE_STALE_FIRST_SHELL)) {
+      e.respondWith(respondWithCacheStaleFirst(e));
+      return true;
+    }
+
+    if (pathname.match(RE_NETWORK_FIRST_ASSETS)) {
       e.respondWith(respondWithCacheNetworkFirst(e));
       return true;
     }

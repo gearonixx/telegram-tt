@@ -15,6 +15,35 @@ type AssetManifest = {
   all: string[];
 };
 
+// A single cache handle reused across fetch events, so the hot path skips a
+// `caches.open` round-trip on every request
+let assetCachePromise: Promise<Cache> | undefined;
+function getAssetCache() {
+  assetCachePromise ??= self.caches.open(ASSET_CACHE_NAME);
+  return assetCachePromise;
+}
+
+// Serves the cached copy immediately and refreshes it from the network in the
+// background, so a repeat visit renders the app shell without a blocking round
+// trip while a new deployment is still picked up on the following load
+export async function respondWithCacheStaleFirst(e: FetchEvent) {
+  const cache = await getAssetCache();
+  const cached = await cache.match(e.request);
+
+  const networkPromise = fetch(e.request).then((remote) => {
+    if (remote.ok) cache.put(e.request, remote.clone());
+    return remote;
+  });
+
+  if (cached?.ok) {
+    // Refresh in the background; ignore network errors (e.g. offline)
+    e.waitUntil(networkPromise.catch(() => undefined));
+    return cached;
+  }
+
+  return networkPromise;
+}
+
 export async function respondWithCacheNetworkFirst(e: FetchEvent) {
   const remote = await withTimeout(() => fetch(e.request), TIMEOUT);
   if (!remote?.ok) {
@@ -22,7 +51,7 @@ export async function respondWithCacheNetworkFirst(e: FetchEvent) {
   }
 
   const toCache = remote.clone();
-  self.caches.open(ASSET_CACHE_NAME).then((cache) => {
+  getAssetCache().then((cache) => {
     return cache?.put(e.request, toCache);
   });
 
@@ -31,7 +60,7 @@ export async function respondWithCacheNetworkFirst(e: FetchEvent) {
 
 export async function respondWithCache(e: FetchEvent) {
   const cacheResult = await withTimeout(async () => {
-    const cache = await self.caches.open(ASSET_CACHE_NAME);
+    const cache = await getAssetCache();
     const cached = await cache.match(e.request);
 
     return { cache, cached };
@@ -79,7 +108,7 @@ export async function precacheBootAssets() {
   const manifest = await fetchAssetManifest();
   if (!manifest?.boot.length) return;
 
-  const cache = await self.caches.open(ASSET_CACHE_NAME);
+  const cache = await getAssetCache();
   const urls = manifest.boot.map((path) => new URL(path, self.registration.scope).href);
   const missing = (await Promise.all(
     urls.map(async (url) => ((await cache.match(url)) ? undefined : url)),
@@ -106,7 +135,7 @@ export async function pruneAssetCache(reHashedAssets: RegExp) {
   }
 
   const validUrls = new Set(manifest.all.map((path) => new URL(path, self.registration.scope).href));
-  const cache = await self.caches.open(ASSET_CACHE_NAME);
+  const cache = await getAssetCache();
   const requests = await cache.keys();
   const staleRequests = requests.filter((request) => {
     const { pathname } = new URL(request.url);
