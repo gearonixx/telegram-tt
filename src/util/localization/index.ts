@@ -375,12 +375,14 @@ function getIntlLocale(languageInfo = language) {
 function getString(langKey: LangKey, count: number) {
   const shouldForceFallback = FORCE_FALLBACK_LANG && language?.langCode === FALLBACK_LANG_CODE;
   let langPackStringValue = !shouldForceFallback ? langPack?.strings[langKey] : undefined;
+  langPackStringValue ||= fallbackLangPack?.strings[langKey];
 
-  if (!langPackStringValue && !fallbackLangPack) {
+  // The inlined `initialStrings` cover the auth/boot screens, so a hit there must not trigger
+  // the deferred ~40 KB fallback pack — that keeps its fetch and parse off the boot critical path
+  if (!langPackStringValue && !fallbackLangPack && !initialStrings[langKey]) {
     loadFallbackPack();
   }
 
-  langPackStringValue ||= fallbackLangPack?.strings[langKey];
   langPackStringValue ||= initialStrings[langKey];
 
   if (!langPackStringValue || isDeletedLangString(langPackStringValue)) return undefined;
