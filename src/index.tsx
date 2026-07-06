@@ -46,6 +46,7 @@ async function init() {
   if (DEBUG) {
     // eslint-disable-next-line no-console
     console.log('>>> INIT');
+    performance.mark('boot:init');
   }
 
   if (!(window as any).isCompatTestPassed) return;
@@ -64,7 +65,9 @@ async function init() {
   });
 
   await initGlobal();
+  if (DEBUG) performance.mark('boot:global-hydrated');
   getActions().init();
+  if (DEBUG) performance.mark('boot:init-action');
 
   getActions().updateShouldEnableDebugLog();
   getActions().updateShouldDebugExportedSenders();
@@ -86,6 +89,7 @@ async function init() {
   }
 
   requestMutation(() => {
+    if (DEBUG) performance.mark('boot:render-start');
     updateWebmanifest();
 
     TeactDOM.render(
@@ -94,6 +98,7 @@ async function init() {
     );
 
     betterView();
+    if (DEBUG) performance.mark('boot:render-end');
   });
 
   if (DEBUG) {

@@ -139,6 +139,7 @@ async function readCache(initialState: GlobalState): Promise<GlobalState> {
   if (DEBUG) {
     // eslint-disable-next-line no-console
     console.time('global-state-cache-read');
+    performance.mark('boot:cache-read-start');
   }
 
   const json = localStorage.getItem(GLOBAL_STATE_CACHE_KEY);
@@ -159,11 +160,13 @@ async function readCache(initialState: GlobalState): Promise<GlobalState> {
   if (DEBUG) {
     // eslint-disable-next-line no-console
     console.timeEnd('global-state-cache-read');
+    performance.mark('boot:cache-read-end');
   }
 
   if (cached) {
     migrateCache(cached, initialState);
   }
+  if (DEBUG && cached) performance.mark('boot:cache-migrated');
 
   const newState: GlobalState = {
     ...initialState,
