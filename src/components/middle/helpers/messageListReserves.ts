@@ -13,6 +13,8 @@ export const BOTTOM_PIN_THRESHOLD = 4;
 export const TOP_PIN_THRESHOLD = 4;
 export const SCROLL_BOTTOM_SENTINEL = 1e7;
 
+let lastKnownFooterReserve: number | undefined;
+
 export function getMessageListBottomReserve(scroller: HTMLElement) {
   if (scroller.classList.contains(SELECT_MODE_CLASS)) {
     return MIN_BOTTOM_INSET + COMPOSER_BOTTOM_GAP;
@@ -26,7 +28,33 @@ export function getMessageListBottomReserve(scroller: HTMLElement) {
   if (getComputedStyle(footer).position !== 'absolute') return 0;
   const buttonContainer = footer.querySelector<HTMLElement>('.middle-column-footer-button-container');
   const footerHeight = Math.max(footer.offsetHeight, buttonContainer?.offsetHeight ?? 0);
-  return Math.max(footerHeight + COMPOSER_BOTTOM_GAP, MIN_BOTTOM_INSET);
+  const reserve = Math.max(footerHeight + COMPOSER_BOTTOM_GAP, MIN_BOTTOM_INSET);
+  lastKnownFooterReserve = reserve;
+  return reserve;
+}
+
+/*
+ * Pre-applies the expected bottom inset on a freshly mounted list, before the
+ * scroll-restore measure flushes its first layout. This way the later
+ * `applyMessageListBottomInset` write in the mutation phase is a no-op and
+ * `resetScroll` clamps against a clean layout instead of forcing a second
+ * full-list reflow. Uses only class checks and the last measured footer
+ * reserve — the `reserveDelta` math in `MessageList` corrects any mismatch
+ * within the same frame.
+ */
+export function applyLastKnownBottomInset(scroller: HTMLElement) {
+  let reserve: number | undefined;
+  if (scroller.classList.contains(SELECT_MODE_CLASS)
+    || BASE_RESERVE_CLASSES.some((cls) => scroller.classList.contains(cls))) {
+    reserve = MIN_BOTTOM_INSET + COMPOSER_BOTTOM_GAP;
+  } else if (scroller.classList.contains(NO_FOOTER_CLASS)) {
+    reserve = 0;
+  } else {
+    reserve = lastKnownFooterReserve;
+  }
+
+  if (!reserve) return;
+  applyMessageListBottomInset(scroller, reserve);
 }
 
 export function getMessageListTopReserve(scroller: HTMLElement) {
