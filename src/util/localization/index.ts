@@ -160,40 +160,54 @@ function updateLanguage(newLang: ApiLanguage) {
 
 function createFormatters() {
   if (!language) return;
-  const intlLocale = getIntlLocale();
   const listFormatFallback = getBasicListFormat();
 
-  function createListFormat(lang: string, type: 'conjunction' | 'disjunction') {
-    return IS_INTL_LIST_FORMAT_SUPPORTED ? new Intl.ListFormat(lang, { type }) : listFormatFallback;
-  }
-
+  // Only `pluralRules` is needed for the first paint (every translated string selects a plural
+  // form). The heavier constructors — `DisplayNames` (region), `ListFormat` and `NumberFormat` —
+  // each trigger a cold ICU data load (~11-15 ms combined) but are only used on demand, so they are
+  // built lazily on first access and memoized per language. `pluralRules` doubles as the locale
+  // validity probe: if the requested locale is unsupported and throws, all formatters fall back.
+  let intlLocale = getIntlLocale();
+  let pluralRules: Intl.PluralRules;
   try {
-    formatters = {
-      pluralRules: new Intl.PluralRules(intlLocale),
-      region: new Intl.DisplayNames(intlLocale, { type: 'region' }),
-      conjunction: createListFormat(intlLocale, 'conjunction'),
-      disjunction: createListFormat(intlLocale, 'disjunction'),
-      number: new Intl.NumberFormat(intlLocale),
-      preciseNumber: new Intl.NumberFormat(intlLocale, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 10,
-      }),
-    };
+    pluralRules = new Intl.PluralRules(intlLocale);
   } catch (e) {
     // eslint-disable-next-line no-console
     console.warn('Failed to create formatters:', e);
-    formatters = {
-      pluralRules: new Intl.PluralRules(FORMATTERS_FALLBACK_LANG),
-      region: new Intl.DisplayNames(FORMATTERS_FALLBACK_LANG, { type: 'region' }),
-      conjunction: createListFormat(FORMATTERS_FALLBACK_LANG, 'conjunction'),
-      disjunction: createListFormat(FORMATTERS_FALLBACK_LANG, 'disjunction'),
-      number: new Intl.NumberFormat(FORMATTERS_FALLBACK_LANG),
-      preciseNumber: new Intl.NumberFormat(FORMATTERS_FALLBACK_LANG, {
+    intlLocale = FORMATTERS_FALLBACK_LANG;
+    pluralRules = new Intl.PluralRules(FORMATTERS_FALLBACK_LANG);
+  }
+
+  function createListFormat(type: 'conjunction' | 'disjunction') {
+    return IS_INTL_LIST_FORMAT_SUPPORTED ? new Intl.ListFormat(intlLocale, { type }) : listFormatFallback;
+  }
+
+  let region: Intl.DisplayNames | undefined;
+  let conjunction: ReturnType<typeof createListFormat> | undefined;
+  let disjunction: ReturnType<typeof createListFormat> | undefined;
+  let number: Intl.NumberFormat | undefined;
+  let preciseNumber: Intl.NumberFormat | undefined;
+  formatters = {
+    pluralRules,
+    get region() {
+      return (region ??= new Intl.DisplayNames(intlLocale, { type: 'region' }));
+    },
+    get conjunction() {
+      return (conjunction ??= createListFormat('conjunction'));
+    },
+    get disjunction() {
+      return (disjunction ??= createListFormat('disjunction'));
+    },
+    get number() {
+      return (number ??= new Intl.NumberFormat(intlLocale));
+    },
+    get preciseNumber() {
+      return (preciseNumber ??= new Intl.NumberFormat(intlLocale, {
         minimumFractionDigits: 0,
         maximumFractionDigits: 10,
-      }),
-    };
-  }
+      }));
+    },
+  };
 
   resetDateFormatCache();
 }
