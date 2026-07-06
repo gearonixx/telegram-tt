@@ -8,6 +8,7 @@ import {
   DEBUG,
   FOLDERS_POSITION_DEFAULT,
   GLOBAL_STATE_CACHE_DISABLED,
+  IS_MOCKED_CLIENT,
   IS_SCREEN_LOCKED_CACHE_KEY,
   SHARED_STATE_CACHE_KEY,
 } from '../config';
@@ -107,7 +108,9 @@ export async function loadCache(initialState: GlobalState): Promise<GlobalState 
 
   const cache = await readCache(initialState);
 
-  if (cache.passcode.hasPasscode || hasStoredSession()) {
+  // The mocked client has no stored session; keep the cache so perf probes
+  // can exercise the real warm-boot hydration path
+  if (cache.passcode.hasPasscode || hasStoredSession() || IS_MOCKED_CLIENT) {
     setupCaching();
 
     return cache;
