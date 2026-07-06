@@ -5,6 +5,8 @@ import type {
   ActionPayloads, GlobalState, RequiredActionPayloads, RequiredGlobalState,
 } from './types';
 
+import { DEBUG } from '../config';
+
 const typed = typify<GlobalState, ActionPayloads & RequiredActionPayloads>();
 
 type ProjectActionTypes =
@@ -46,6 +48,25 @@ type ActionHandlers = {
 
 export const getGlobal = typed.getGlobal;
 export const setGlobal = typed.setGlobal;
+
+if (DEBUG && typeof window !== 'undefined') {
+  (window as any).__globalStoreStats = () => {
+    const global = typed.getGlobal() as unknown as Record<string, unknown>;
+    const rows: Record<string, { bytes: number; count?: number }> = {};
+    Object.entries(global).forEach(([key, value]) => {
+      let bytes;
+      try {
+        bytes = JSON.stringify(value)?.length ?? 0;
+      } catch {
+        bytes = -1;
+      }
+      const count = value && typeof value === 'object' ? Object.keys(value).length : undefined;
+      rows[key] = { bytes, count };
+    });
+    const total = Object.values(rows).reduce((acc, r) => acc + Math.max(0, r.bytes), 0);
+    return { total, rows };
+  };
+}
 export const getActions = typed.getActions;
 export const getPromiseActions = typed.getPromiseActions;
 export const addActionHandler = typed.addActionHandler as <ActionName extends ProjectActionNames>(
