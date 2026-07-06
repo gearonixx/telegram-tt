@@ -1,0 +1,2 @@
+import{S_ as e}from"./index-s1db7vp5.js";import{t}from"./rust-CHN1Z7vc.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/rust" instead of "highlight.js/lib/languages/rust.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=rust.js-C-FL-8Qg.js.map

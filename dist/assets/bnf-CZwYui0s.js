@@ -1,0 +1,2 @@
+import{S_ as e}from"./index-s1db7vp5.js";var t=e(((e,t)=>{function n(e){return{name:`Backus–Naur Form`,contains:[{className:`attribute`,begin:/</,end:/>/},{begin:/::=/,end:/$/,contains:[{begin:/</,end:/>/},e.C_LINE_COMMENT_MODE,e.C_BLOCK_COMMENT_MODE,e.APOS_STRING_MODE,e.QUOTE_STRING_MODE]}]}}t.exports=n}));export default t();export{t};
+//# sourceMappingURL=bnf-CZwYui0s.js.map

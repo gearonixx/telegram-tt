@@ -1,0 +1,2 @@
+import{S_ as e}from"./index-s1db7vp5.js";var t=e(((e,t)=>{function n(e){return{name:`Plain text`,aliases:[`text`,`txt`],disableAutodetect:!0}}t.exports=n}));export default t();export{t};
+//# sourceMappingURL=plaintext-CYswqwf6.js.map

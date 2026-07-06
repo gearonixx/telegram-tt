@@ -1,2 +1,0 @@
-import{iS as e}from"./index-CI52CDNP.js";import{t}from"./purebasic-Bin65g47.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/purebasic" instead of "highlight.js/lib/languages/purebasic.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=purebasic.js-Crk8Y9Y-.js.map

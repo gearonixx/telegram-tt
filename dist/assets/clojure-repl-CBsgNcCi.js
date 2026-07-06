@@ -1,0 +1,2 @@
+import{S_ as e}from"./index-s1db7vp5.js";var t=e(((e,t)=>{function n(e){return{name:`Clojure REPL`,contains:[{className:`meta.prompt`,begin:/^([\w.-]+|\s*#_)?=>/,starts:{end:/$/,subLanguage:`clojure`}}]}}t.exports=n}));export default t();export{t};
+//# sourceMappingURL=clojure-repl-CBsgNcCi.js.map

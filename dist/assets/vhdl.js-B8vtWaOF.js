@@ -1,2 +1,0 @@
-import{iS as e}from"./index-CI52CDNP.js";import{t}from"./vhdl-nop2ZAmf.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/vhdl" instead of "highlight.js/lib/languages/vhdl.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=vhdl.js-B8vtWaOF.js.map

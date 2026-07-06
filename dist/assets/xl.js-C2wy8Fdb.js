@@ -1,2 +1,0 @@
-import{iS as e}from"./index-CI52CDNP.js";import{t}from"./xl-BwEun2PQ.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/xl" instead of "highlight.js/lib/languages/xl.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=xl.js-C2wy8Fdb.js.map

@@ -1,2 +1,0 @@
-import{iS as e}from"./index-CI52CDNP.js";import{t}from"./julia-repl-C_i4g3dy.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/julia-repl" instead of "highlight.js/lib/languages/julia-repl.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=julia-repl.js-DMDtY1sg.js.map

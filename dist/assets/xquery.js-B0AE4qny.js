@@ -1,2 +1,0 @@
-import{iS as e}from"./index-CI52CDNP.js";import{t}from"./xquery-DkzPjB-l.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/xquery" instead of "highlight.js/lib/languages/xquery.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=xquery.js-B0AE4qny.js.map

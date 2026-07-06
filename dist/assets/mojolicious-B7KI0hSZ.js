@@ -1,0 +1,2 @@
+import{S_ as e}from"./index-s1db7vp5.js";var t=e(((e,t)=>{function n(e){return{name:`Mojolicious`,subLanguage:`xml`,contains:[{className:`meta`,begin:`^__(END|DATA)__$`},{begin:`^\\s*%{1,2}={0,2}`,end:`$`,subLanguage:`perl`},{begin:`<%{1,2}={0,2}`,end:`={0,1}%>`,subLanguage:`perl`,excludeBegin:!0,excludeEnd:!0}]}}t.exports=n}));export default t();export{t};
+//# sourceMappingURL=mojolicious-B7KI0hSZ.js.map

@@ -1,2 +1,0 @@
-import{iS as e}from"./index-CI52CDNP.js";var t=e(((e,t)=>{function n(e){return{name:`VBScript in HTML`,subLanguage:`xml`,contains:[{begin:`<%`,end:`%>`,subLanguage:`vbscript`}]}}t.exports=n}));export default t();export{t};
-//# sourceMappingURL=vbscript-html-D82i8HAS.js.map

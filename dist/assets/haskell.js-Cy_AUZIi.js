@@ -1,2 +1,0 @@
-import{iS as e}from"./index-CI52CDNP.js";import{t}from"./haskell-c6NAvW7c.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/haskell" instead of "highlight.js/lib/languages/haskell.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=haskell.js-Cy_AUZIi.js.map

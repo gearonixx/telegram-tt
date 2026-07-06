@@ -1,2 +1,0 @@
-import{$h as e,$v as t,Zd as n}from"./index-CI52CDNP.js";var r={link:`QqgPse9b`,isPrimary:`_17U5fxqx`},i=`/home/x/try4/telegram-tt/src/components/ui/Link.tsx`,a=({children:a,isPrimary:o,className:s,isRtl:c,withMultilineFix:l,onClick:u})=>{let d=n(e=>{e.preventDefault(),u(e)});return t(`a`,{href:`#`,className:e(`Link`,r.link,s,o&&r.isPrimary),dir:l?void 0:c?`rtl`:`auto`,onClick:u?d:void 0,children:a},void 0,!1,{fileName:i,lineNumber:25,columnNumber:5},void 0)};export{a as t};
-//# sourceMappingURL=Link-ITr8A8ci.js.map

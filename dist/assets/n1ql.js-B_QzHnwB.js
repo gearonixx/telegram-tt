@@ -1,2 +1,0 @@
-import{iS as e}from"./index-CI52CDNP.js";import{t}from"./n1ql-C5NR68s8.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/n1ql" instead of "highlight.js/lib/languages/n1ql.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=n1ql.js-B_QzHnwB.js.map

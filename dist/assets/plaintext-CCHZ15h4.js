@@ -1,2 +1,0 @@
-import{iS as e}from"./index-CI52CDNP.js";var t=e(((e,t)=>{function n(e){return{name:`Plain text`,aliases:[`text`,`txt`],disableAutodetect:!0}}t.exports=n}));export default t();export{t};
-//# sourceMappingURL=plaintext-CCHZ15h4.js.map

@@ -1,2 +1,0 @@
-import{iS as e}from"./index-CI52CDNP.js";import{t}from"./ebnf-COTAyBCn.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/ebnf" instead of "highlight.js/lib/languages/ebnf.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=ebnf.js-B6LSKA7l.js.map
