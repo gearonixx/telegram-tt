@@ -1,2 +1,0 @@
-import{S_ as e}from"./index-s1db7vp5.js";import{t}from"./matlab-NT0ORn9E.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/matlab" instead of "highlight.js/lib/languages/matlab.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=matlab.js-Crcc0NIK.js.map

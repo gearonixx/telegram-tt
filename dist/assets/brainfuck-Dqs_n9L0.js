@@ -1,0 +1,2 @@
+import{S_ as e}from"./index-DpU4Dd22.js";var t=e(((e,t)=>{function n(e){let t={className:`literal`,begin:/[+-]+/,relevance:0};return{name:`Brainfuck`,aliases:[`bf`],contains:[e.COMMENT(/[^\[\]\.,\+\-<> \r\n]/,/[\[\]\.,\+\-<> \r\n]/,{contains:[{match:/[ ]+[^\[\]\.,\+\-<> \r\n]/,relevance:0}],returnEnd:!0,relevance:0}),{className:`title`,begin:`[\\[\\]]`,relevance:0},{className:`string`,begin:`[\\.,]`,relevance:0},{begin:/(?=\+\+|--)/,contains:[t]},t]}}t.exports=n}));export default t();export{t};
+//# sourceMappingURL=brainfuck-Dqs_n9L0.js.map

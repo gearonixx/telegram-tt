@@ -1,0 +1,2 @@
+import{S_ as e}from"./index-DpU4Dd22.js";var t=e(((e,t)=>{function n(e){return{name:`LDIF`,contains:[{className:`attribute`,match:`^dn(?=:)`,relevance:10},{className:`attribute`,match:`^\\w+(?=:)`},{className:`literal`,match:`^-`},e.HASH_COMMENT_MODE]}}t.exports=n}));export default t();export{t};
+//# sourceMappingURL=ldif-BzfPd4D8.js.map

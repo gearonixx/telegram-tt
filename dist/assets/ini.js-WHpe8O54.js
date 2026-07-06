@@ -1,0 +1,2 @@
+import{S_ as e}from"./index-DpU4Dd22.js";import{t}from"./ini-Cl7en6cl.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/ini" instead of "highlight.js/lib/languages/ini.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=ini.js-WHpe8O54.js.map

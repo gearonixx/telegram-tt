@@ -1,2 +1,0 @@
-import{S_ as e}from"./index-s1db7vp5.js";import{t}from"./elixir-NUwEM92U.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/elixir" instead of "highlight.js/lib/languages/elixir.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=elixir.js-Dj4Al2nz.js.map

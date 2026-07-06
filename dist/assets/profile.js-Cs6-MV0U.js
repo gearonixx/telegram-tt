@@ -1,0 +1,2 @@
+import{S_ as e}from"./index-DpU4Dd22.js";import{t}from"./profile-BALPFc_d.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/profile" instead of "highlight.js/lib/languages/profile.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=profile.js-Cs6-MV0U.js.map

@@ -1,2 +1,0 @@
-import{S_ as e}from"./index-s1db7vp5.js";var t=e(((e,t)=>{function n(e){return{name:`Julia REPL`,contains:[{className:`meta.prompt`,begin:/^julia>/,relevance:10,starts:{end:/^(?![ ]{6})/,subLanguage:`julia`}}],aliases:[`jldoctest`]}}t.exports=n}));export default t();export{t};
-//# sourceMappingURL=julia-repl-lj23pdZA.js.map

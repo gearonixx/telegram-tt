@@ -1,0 +1,2 @@
+import{S_ as e}from"./index-DpU4Dd22.js";import{t}from"./parser3-CrGImqvE.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/parser3" instead of "highlight.js/lib/languages/parser3.js"`))}r(),n.exports=t()}));export default n();
+//# sourceMappingURL=parser3.js-C6kxD6bv.js.map

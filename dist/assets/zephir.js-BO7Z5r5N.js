@@ -1,2 +1,0 @@
-import{S_ as e}from"./index-s1db7vp5.js";import{t}from"./zephir-CnWq_dni.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/zephir" instead of "highlight.js/lib/languages/zephir.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=zephir.js-BO7Z5r5N.js.map

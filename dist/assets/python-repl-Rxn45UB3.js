@@ -1,2 +1,0 @@
-import{S_ as e}from"./index-s1db7vp5.js";var t=e(((e,t)=>{function n(e){return{aliases:[`pycon`],contains:[{className:`meta.prompt`,starts:{end:/ |$/,starts:{end:`$`,subLanguage:`python`}},variants:[{begin:/^>>>(?=[ ]|$)/},{begin:/^\.\.\.(?=[ ]|$)/}]}]}}t.exports=n}));export default t();export{t};
-//# sourceMappingURL=python-repl-Rxn45UB3.js.map

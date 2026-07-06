@@ -1,2 +1,0 @@
-import{S_ as e}from"./index-s1db7vp5.js";var t=e(((e,t)=>{function n(e){return{name:`VBScript in HTML`,subLanguage:`xml`,contains:[{begin:`<%`,end:`%>`,subLanguage:`vbscript`}]}}t.exports=n}));export default t();export{t};
-//# sourceMappingURL=vbscript-html-B4DARLzq.js.map

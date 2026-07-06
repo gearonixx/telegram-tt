@@ -1,2 +1,0 @@
-import{S_ as e}from"./index-s1db7vp5.js";import{t}from"./vbscript-html-B4DARLzq.js";var n=e(((e,n)=>{function r(){r.warned||(r.warned=!0,console.log(`Deprecation (warning): Using file extension in specifier is deprecated, use "highlight.js/lib/languages/vbscript-html" instead of "highlight.js/lib/languages/vbscript-html.js"`))}r(),n.exports=t()}));export default n();
-//# sourceMappingURL=vbscript-html.js-Bu5UrLJh.js.map

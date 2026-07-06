@@ -1,0 +1,2 @@
+import{S_ as e}from"./index-DpU4Dd22.js";var t=e(((e,t)=>{function n(e){return{name:`Dust`,aliases:[`dst`],case_insensitive:!0,subLanguage:`xml`,contains:[{className:`template-tag`,begin:/\{[#\/]/,end:/\}/,illegal:/;/,contains:[{className:`name`,begin:/[a-zA-Z\.-]+/,starts:{endsWithParent:!0,relevance:0,contains:[e.QUOTE_STRING_MODE]}}]},{className:`template-variable`,begin:/\{/,end:/\}/,illegal:/;/,keywords:`if eq ne lt lte gt gte select default math sep`}]}}t.exports=n}));export default t();export{t};
+//# sourceMappingURL=dust-D93vDJyr.js.map
