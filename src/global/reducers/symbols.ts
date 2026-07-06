@@ -2,10 +2,33 @@ import type { ApiSticker, ApiStickerSet, ApiVideo } from '../../api/types';
 import type { GlobalState, TabArgs } from '../types';
 
 import { getCurrentTabId } from '../../util/establishMultitabRole';
-import { buildCollectionByKey, unique } from '../../util/iteratees';
+import { buildCollectionByKey, pick, unique } from '../../util/iteratees';
 import { selectCustomEmojiForEmoji, selectStickersForEmoji } from '../selectors/symbols';
 import { selectTabState } from '../selectors/tabs';
 import { updateTabState } from './tabs';
+
+// Session-lifetime cap for the re-fetchable `customEmojis.byId` metadata map.
+// Evicted entries self-heal via `ensureCustomEmoji` on next render. `Infinity` disables.
+const CUSTOM_EMOJI_CACHE_LIMIT = 1024;
+
+export function pruneCustomEmojiById<T extends GlobalState>(global: T): T {
+  const { byId, lastRendered } = global.customEmojis;
+  const ids = Object.keys(byId);
+  if (ids.length <= CUSTOM_EMOJI_CACHE_LIMIT) {
+    return global;
+  }
+
+  // Keep the most recently rendered entries plus the newest-loaded tail, up to the limit
+  const keepIds = unique([...lastRendered, ...ids.slice(-CUSTOM_EMOJI_CACHE_LIMIT)]).slice(0, CUSTOM_EMOJI_CACHE_LIMIT);
+
+  return {
+    ...global,
+    customEmojis: {
+      ...global.customEmojis,
+      byId: pick(byId, keepIds),
+    },
+  };
+}
 
 export function updateStickerSearch<T extends GlobalState>(
   global: T,

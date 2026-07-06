@@ -85,6 +85,7 @@ import {
   addChatMessagesById,
   clearMessageSummary,
   deleteSponsoredMessage,
+  pruneCustomEmojiById,
   removeOutlyingList,
   removeRequestedMessageTranslation,
   removeUnreadMentions,
@@ -1686,6 +1687,7 @@ addActionHandler('loadCustomEmojis', async (global, actions, payload): Promise<v
       },
     },
   };
+  global = pruneCustomEmojiById(global);
   setGlobal(global);
 });
 
