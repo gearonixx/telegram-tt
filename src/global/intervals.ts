@@ -118,6 +118,9 @@ function collectOpenChatIds(global: GlobalState) {
     tabState.messageLists.forEach(({ chatId }) => chatIds.add(chatId));
     if (tabState.forumPanelChatId) chatIds.add(tabState.forumPanelChatId);
     if (tabState.focusedMessage?.chatId) chatIds.add(tabState.focusedMessage.chatId);
+    // The media viewer can outlive its chat's message list (e.g. opened from shared media), and
+    // eviction `unload()`s a message's media hashes, so keep the viewed chat's slice alive too
+    if (tabState.mediaViewer?.chatId) chatIds.add(tabState.mediaViewer.chatId);
   });
 
   if (global.currentUserId) chatIds.add(global.currentUserId);
