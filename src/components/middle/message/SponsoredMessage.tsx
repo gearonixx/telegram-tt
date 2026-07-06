@@ -14,11 +14,11 @@ import {
   getMessageContent,
 } from '../../../global/helpers';
 import {
-  selectActiveDownloads, selectCanAutoLoadMedia, selectCanAutoPlayMedia,
+  selectActiveDownloads, selectCanAutoLoadMedia,
   selectSponsoredMessage,
   selectTheme,
 } from '../../../global/selectors';
-import { selectMessageDownloadableMedia } from '../../../global/selectors/media';
+import { selectCanAutoPlayMedia, selectMessageDownloadableMedia } from '../../../global/selectors/media';
 import { IS_ANDROID } from '../../../util/browser/windowEnvironment';
 import buildClassName from '../../../util/buildClassName';
 import { renderTextWithEntities } from '../../common/helpers/renderTextWithEntities';

@@ -1,13 +1,11 @@
-import type { ApiMessage, ApiPeer, ApiSponsoredMessage } from '../../api/types';
+import type { ApiPeer } from '../../api/types';
 import type { CustomPeer, PerformanceTypeKey, ThemeKey } from '../../types';
 import type { GlobalState, TabArgs } from '../types';
 import { NewChatMembersProgress, RightColumnContent } from '../../types';
 
 import { IS_SNAP_EFFECT_SUPPORTED } from '../../util/browser/windowEnvironment';
 import { getCurrentTabId } from '../../util/establishMultitabRole';
-import { getMessageVideo, getWebPageVideo } from '../helpers/messageMedia';
 import { selectCurrentManagement } from './management';
-import { selectWebPageFromMessage } from './messages';
 import { selectSharedSettings } from './sharedState';
 import { selectIsStatisticsShown } from './statistics';
 import { selectTabState } from './tabs';
@@ -121,21 +119,6 @@ export function selectPerformanceSettingsValue<T extends GlobalState>(
   key: PerformanceTypeKey,
 ) {
   return selectPerformanceSettings(global)[key];
-}
-
-export function selectCanAutoPlayMedia<T extends GlobalState>(global: T, message: ApiMessage | ApiSponsoredMessage) {
-  const webPage = selectWebPageFromMessage(global, message);
-  const video = getMessageVideo(message) || getWebPageVideo(webPage);
-  if (!video) {
-    return undefined;
-  }
-
-  const canAutoPlayVideos = selectPerformanceSettingsValue(global, 'autoplayVideos');
-  const canAutoPlayGifs = selectPerformanceSettingsValue(global, 'autoplayGifs');
-
-  const asGif = video.isGif || video.isRound;
-
-  return (canAutoPlayVideos && !asGif) || (canAutoPlayGifs && asGif);
 }
 
 export function selectShouldLoopStickers<T extends GlobalState>(global: T) {

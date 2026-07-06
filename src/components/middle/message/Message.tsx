@@ -79,7 +79,6 @@ import {
   selectActiveDownloads,
   selectAnimatedEmoji,
   selectCanAutoLoadMedia,
-  selectCanAutoPlayMedia,
   selectCanReplyToMessage,
   selectChat,
   selectChatFullInfo,
@@ -121,6 +120,7 @@ import {
   selectUser,
 } from '../../../global/selectors';
 import {
+  selectCanAutoPlayMedia,
   selectIsMediaNsfw,
   selectMessageDownloadableMedia,
   selectMessageLastPlaybackTimestamp,

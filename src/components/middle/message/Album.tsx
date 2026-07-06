@@ -14,9 +14,9 @@ import {
 import {
   selectActiveDownloads,
   selectCanAutoLoadMedia,
-  selectCanAutoPlayMedia,
   selectTheme,
 } from '../../../global/selectors';
+import { selectCanAutoPlayMedia } from '../../../global/selectors/media';
 import { getMessageKey } from '../../../util/keys/messageKey';
 import { AlbumRectPart } from './helpers/calculateAlbumLayout';
 import withSelectControl from './hocs/withSelectControl';

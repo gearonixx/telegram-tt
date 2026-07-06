@@ -3,6 +3,7 @@ import type {
 } from '../types';
 import {
   type ApiMessage,
+  type ApiSponsoredMessage,
   type MediaContainer,
   type SizeTarget,
 } from '../../api/types';
@@ -21,6 +22,22 @@ import {
 } from './messages';
 import { selectSettingsKeys } from './settings';
 import { selectAnimatedEmoji, selectCustomEmoji } from './symbols';
+import { selectPerformanceSettingsValue } from './ui';
+
+export function selectCanAutoPlayMedia<T extends GlobalState>(global: T, message: ApiMessage | ApiSponsoredMessage) {
+  const webPage = selectWebPageFromMessage(global, message);
+  const video = getMessageVideo(message) || getWebPageVideo(webPage);
+  if (!video) {
+    return undefined;
+  }
+
+  const canAutoPlayVideos = selectPerformanceSettingsValue(global, 'autoplayVideos');
+  const canAutoPlayGifs = selectPerformanceSettingsValue(global, 'autoplayGifs');
+
+  const asGif = video.isGif || video.isRound;
+
+  return (canAutoPlayVideos && !asGif) || (canAutoPlayGifs && asGif);
+}
 
 export function selectIsMediaNsfw<T extends GlobalState>(global: T, message: ApiMessage) {
   const { isSensitiveEnabled } = selectSettingsKeys(global);
