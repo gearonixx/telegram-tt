@@ -3,11 +3,31 @@ import type { TextSummary, TranslatedMessage, TranslationTone } from '../../type
 import type { GlobalState, TabArgs } from '../types';
 
 import { getCurrentTabId } from '../../util/establishMultitabRole';
-import { omit } from '../../util/iteratees';
+import { omit, pick } from '../../util/iteratees';
 import { getTranslationCacheKey, parseTranslationCacheKey } from '../../util/keys/translationKey';
 import { selectMessageTranslations } from '../selectors/messages';
 import { selectTabState } from '../selectors/tabs';
 import { updateTabState } from './tabs';
+
+// Session-lifetime cap on the number of chats retained in the re-fetchable
+// message-translation cache. Evicted chats re-populate on re-translate. `Infinity` disables.
+const TRANSLATIONS_CHAT_LIMIT = 32;
+
+function pruneChatTranslations<T extends GlobalState>(global: T): T {
+  const { byChatId } = global.translations;
+  const chatIds = Object.keys(byChatId);
+  if (chatIds.length <= TRANSLATIONS_CHAT_LIMIT) {
+    return global;
+  }
+
+  return {
+    ...global,
+    translations: {
+      ...global.translations,
+      byChatId: pick(byChatId, chatIds.slice(-TRANSLATIONS_CHAT_LIMIT)),
+    },
+  };
+}
 
 export function updateMessageTranslation<T extends GlobalState>(
   global: T,
@@ -20,7 +40,7 @@ export function updateMessageTranslation<T extends GlobalState>(
   const cacheKey = getTranslationCacheKey(toLanguageCode, tone);
   const translatedMessages = selectMessageTranslations(global, chatId, cacheKey);
 
-  return {
+  return pruneChatTranslations({
     ...global,
     translations: {
       ...global.translations,
@@ -41,7 +61,7 @@ export function updateMessageTranslation<T extends GlobalState>(
         },
       },
     },
-  };
+  });
 }
 
 export function clearMessageTranslation<T extends GlobalState>(
