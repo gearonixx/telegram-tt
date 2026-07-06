@@ -10,6 +10,13 @@ declare module 'virtual:git-info' {
   export const APP_REVISION: string;
 }
 
+declare module 'virtual:fallback-langpack' {
+  import type { CachedLangData } from '../api/types';
+
+  const langData: CachedLangData;
+  export default langData;
+}
+
 interface ImportMetaEnv {
   readonly TG_APP_ENV: string;
   readonly TG_APP_MOCKED_CLIENT: string;

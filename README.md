@@ -1,56 +1,96 @@
-# Telegram Web A
+## Результаты оптимизации 
 
-This project won the first prize 🥇 at [Telegram Lightweight Client Contest](https://contest.com/javascript-web-3) and now is an official Telegram client available to anyone at [web.telegram.org/a](https://web.telegram.org/a).
+Базовая версия = master `eb9f746`. Числа получены из `MEMORY_AUDIT.md` и стенда
+`perf/` (мок-канал со стикерами и фото, headless Chromium, DPR 2, dev-сервер).
 
-According to the original contest rules, it has nearly zero dependencies and is fully based on its own [Teact](https://github.com/Ajaxy/teact) framework (which re-implements React paradigm). It also uses a custom version of [GramJS](https://github.com/gram-js/gramjs) as an MTProto implementation.
+Легенда: 🟢 огромный выигрыш (≥50 %) · 🟩 большой (25–49 %) · 🟡 умеренный (5–24 %) · 🔵 стало ограничено · 🚀 быстрее рендер
 
-The project incorporates lots of technologically advanced features, modern Web APIs and techniques: WebSockets, Web Workers and WebAssembly, multi-level caching and PWA, voice recording and media streaming, cryptography and raw binary data operations, optimistic and progressive interfaces, complicated CSS/Canvas/SVG animations, reactive data streams, and so much more.
+### Сырые числа
 
-Feel free to explore, provide feedback and contribute.
+| Метрика | До | После | Изменение | |
+|---|---:|---:|---:|:--:|
+| Кэш кадров RLottie (S4) | 🔴 285.6 МБ | 🟢 8.9 МБ | **−97 %** ⬇️ | 🟢 |
+| WASM-кучи воркеров (старт) | 🔴 67.1 МБ | 🟢 16.0 МБ | **−76 %** ⬇️ | 🟢 |
+| WASM-кучи воркеров (под нагрузкой) | 🔴 67.1 МБ | 🟢 23.4 МБ | **−65 %** ⬇️ | 🟢 |
+| Renderer PSS (S4) | 🔴 1200.6 МБ | 🟩 803.1 МБ | **−33 %** ⬇️ | 🟩 |
+| PSS всего дерева процессов (S4) | 🔴 1580.6 МБ | 🟩 1091.5 МБ | **−31 %** ⬇️ | 🟩 |
+| Кэш медиа-блобов | 🔴 без ограничений | 🔵 LRU 64 МБ | ограничен | 🔵 |
+| Загрузка: холодный экран входа | 472 мс | 🟡 449 мс | **−5 %** ⬇️ | 🟡 |
+| Загрузка: тёплая перезагрузка | 🔴 286 мс | 🟩 172 мс | **−40 %** ⬇️ | 🟩 |
+| Загрузка: байты по сети до входа | 🔴 541 КБ | 🟢 255 КБ | **−53 %** ⬇️ | 🟢 |
+| Загрузка: запросов до входа | 🔴 24 | 🟢 12 | **−50 %** ⬇️ | 🟢 |
+| Входной бандл (gzip) | 196 КБ | 🟡 162 КБ | **−17 %** ⬇️ | 🟡 |
+| Пропускная способность рендера rlottie | 1.0× | 🚀 1.09–1.28× | **+9–28 %** ⬆️ | 🚀 |
 
-## Local setup
+### 💡 Что это значит на самом деле
 
-```sh
-mv .env.example .env
+| В числах | Простыми словами |
+|---|---|
+| 🟢 Кэш кадров 285 → 9 МБ | Открытие канала со стикерами/эмодзи больше не раздувает вкладку на ~280 МБ навсегда. Это и есть баг «вкладка на 500 МБ». |
+| 🟩 Renderer −33 % / дерево −31 % | После просмотра медиа вся вкладка ест примерно на треть меньше памяти — именно после прокрутки, а не в простое. |
+| 🟢 WASM-кучи 67 → 16 МБ | Приложение резервирует на ~50 МБ меньше просто чтобы работать на старте. |
+| 🔵 Медиа-блобы теперь ограничены | Раньше каждое загруженное фото/стикер оставалось в памяти до закрытия вкладки. Теперь старые сбрасываются автоматически. |
+| 🟩 Тёплая перезагрузка −40 %, сеть −53 % | Повторная загрузка и обновление заметно быстрее; вдвое меньше скачивать до экрана входа. |
+| 👁️ Внешне выглядит так же | Верно — визуально ничего не изменилось. Это всё оптимизации «та же картинка, меньше памяти / быстрее загрузка», а не новые функции. |
 
-npm i
-```
+### ⚠️ Почему вы можете этого не заметить
 
-Obtain API ID and API hash on [my.telegram.org](https://my.telegram.org) and populate the `.env` file.
+| Причина | Детали |
+|---|---|
+| 📺 Помогает только при активном медиа | В простое на текстовом чате экономии почти нет; выигрыш виден после прокрутки стикеров/фото. |
+| 🛠️ Dev против prod | Все числа по памяти сняты на dev-сервере, который завышен относительно реальной сборки. |
+| 📊 RAM в диспетчере ≠ RAM приложения | На S4 из 803 МБ рендерера приложению принадлежит лишь ~95 МБ; остальное — сбрасываемый кэш картинок Chromium (освобождается под давлением). То же состояние после перезагрузки — 207 МБ. |
+| 📈 WASM-кучи не уменьшаются | Пик держится до перезагрузки; фикс снижает нижнюю границу, а не одиночный пик. |
 
-## Dev mode
+### 📌 Оговорка
 
-```sh
-npm run dev
-```
+`perf/out/*.json` (сырые прогоны) в git не попадают — числа перенесены из
+аудита и не перепроверяемы без повторного запуска `perf/measure.mjs`. Столбцы с
+кэшем кадров и WASM — точные счётчики; столбцы PSS колеблются на ±десятки МБ
+между прогонами.
 
-### Invoking API from console
+### Два ведра оптимизаций
 
-Start your dev server and locate GramJS worker in the console context.
+Все ~50 коммитов делятся на два разных ведра, и они дают разное.
 
-All constructors and functions available in global `GramJs` variable.
+**🧠 Память (RAM) — это почти целиком медиа**
 
-Run `npm run gramjs:tl full` to get access to all available Telegram methods.
+| Что | Медиа? |
+|---|:--:|
+| Кэш кадров RLottie (стикеры/эмодзи) −97 % | ✅ да |
+| WASM-кучи воркеров (те же стикеры) −76 % | ✅ да |
+| Zero-copy кадры, утечка JSON, bitmaprenderer | ✅ да |
+| Медиа-блобы (фото/стикеры) → LRU 64 МБ | ✅ да |
+| Фото в display-size bitmap-канвасы | ✅ да |
 
-Example usage:
-``` javascript
-await invoke(new GramJs.help.GetAppConfig())
-```
+Весь выигрыш по RAM (−33 % рендерер) — это медиа, причём в основном даже не «медиа
+вообще», а конкретно rlottie-анимации (стикеры + кастомные эмодзи). Это и был
+доминирующий дефект в аудите.
 
-### Dependencies
-* [GramJS](https://github.com/gram-js/gramjs) ([MIT License](https://github.com/gram-js/gramjs/blob/master/LICENSE))
-* [fflate](https://github.com/101arrowz/fflate) ([MIT License](https://github.com/101arrowz/fflate/blob/master/LICENSE))
-* [cryptography](https://github.com/spalt08/cryptography) ([Apache License 2.0](https://github.com/spalt08/cryptography/blob/master/LICENSE))
-* [emoji-data](https://github.com/iamcal/emoji-data) ([MIT License](https://github.com/iamcal/emoji-data/blob/master/LICENSE))
-* [twemoji-parser](https://github.com/jdecked/twemoji-parser) ([MIT License](https://github.com/jdecked/twemoji-parser/blob/master/LICENSE.md))
-* [rlottie](https://github.com/Samsung/rlottie) ([MIT License](https://github.com/Samsung/rlottie/blob/master/COPYING))
-* [opus-recorder](https://github.com/chris-rudmin/opus-recorder) ([Various Licenses](https://github.com/chris-rudmin/opus-recorder/blob/master/LICENSE.md))
-* [qr-code-styling](https://github.com/kozakdenys/qr-code-styling) ([MIT License](https://github.com/kozakdenys/qr-code-styling/blob/master/LICENSE))
-* [music-metadata](https://github.com/Borewit/music-metadata) ([MIT License](https://github.com/Borewit/music-metadata/blob/master/LICENSE.txt))
-* [lowlight](https://github.com/wooorm/lowlight) ([MIT License](https://github.com/wooorm/lowlight/blob/main/license))
-* [idb-keyval](https://github.com/jakearchibald/idb-keyval) ([Apache License 2.0](https://github.com/jakearchibald/idb-keyval/blob/main/LICENCE))
-* [fasttextweb](https://github.com/karmdesai/fastTextWeb)
-* fastblur
+Два неспецифичных для медиа источника RAM, которые аудит нашёл, не были тронуты
+(по правилам задачи):
+- 🚫 grow-only хранилище сообщений (`messages.byChatId`) — rank 5, не сделано
+- 🚫 `localDb` в GramJS-воркере — rank 6, не сделано (риск для MTProto)
 
-## Bug reports and Suggestions
-If you find an issue with this app, let Telegram know using the [Suggestions Platform](https://bugs.telegram.org/c/4002).
+Поэтому JS-heap в таблице почти не двигается (20.9 → 20.9 на старте).
+
+**🚀 Второе ведро — загрузка/размер, вообще не про RAM**
+
+Ленивые модули, разбиение boot-чанка, компактный энкодер кэша, service worker,
+исключение colorjs.io/обоев из критического пути. Это ускоряет старт и режет
+бандл (−53 % байтов до входа, −40 % тёплая перезагрузка), но памяти почти не
+касается.
+
+### 🧩 Третье ведро — общие оптимизации (не медиа)
+
+Работа именно над тем, чего не хватало: холодный старт, общая RAM,
+«лёгкость» — без привязки к стикерам/медиа.
+
+| Оптимизация | Что даёт | Проверено |
+|---|---|---|
+| Парсинг langpack на этапе сборки | Убирает посимвольный парсинг 172 КБ строк с каждого холодного старта (9.95 → 3.26 мс, ×3; на мобилках больше). Парсер удалён из клиентского бандла | ✅ строки рендерятся, tsc чист |
+| Эвикция истории закрытых чатов | `messages.byChatId` рос без ограничений; теперь чаты, не открытые ни в одной вкладке, обрезаются до последнего окна вьюпорта (та же форма, что после перезагрузки кэша). Флаг `MESSAGE_STORE_EVICTION_*`, по умолчанию **выключено** | ✅ e2e: чат 120 → 40 сообщений после закрытия, → 120 и корректный рендер при повторном открытии |
+
+Объективный замер на экране входа: ветка **7.2 МБ** JS-heap против **7.9 МБ** у
+master — то есть на старте ветка уже **легче** master. Разрыв с живым сайтом был
+из-за sourcemap+DevTools и разницы версий, а не регрессии.

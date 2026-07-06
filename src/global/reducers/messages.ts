@@ -34,6 +34,7 @@ import {
   selectListedIds, selectMessageIdsByGroupId, selectOutlyingLists, selectPinnedIds, selectPoll, selectQuickReplyMessage,
   selectScheduledMessage, selectViewportIds, selectWebPage,
 } from '../selectors/messages';
+import { selectChatLastMessageId } from '../selectors/chats';
 import { selectTabState } from '../selectors/tabs';
 import { selectThreadIdFromMessage, selectThreadInfo, selectThreadLocalStateParam } from '../selectors/threads';
 import { removeUnreadMentions } from './chats';
@@ -970,4 +971,62 @@ export function updatePollVote<T extends GlobalState>(
       resultByOption: newResultByOption,
     },
   });
+}
+
+// Trims the grow-only runtime history of the given (closed) chats back to their
+// last viewport window plus the chat's last message, resetting `listedIds` and
+// dropping `outlyingLists` so the store stays internally consistent — the same
+// shape the app already runs with after a cache reload, which re-fetches on
+// scroll. Threads with an in-progress edit are skipped
+export function trimChatMessages<T extends GlobalState>(global: T, chatIds: string[]): T {
+  let nextGlobal = global;
+
+  for (const chatId of chatIds) {
+    const current = nextGlobal.messages.byChatId[chatId];
+    if (!current) continue;
+
+    const threadsById = current.threadsById || {};
+    const threadKeys = Object.keys(threadsById);
+
+    const hasActiveEdit = threadKeys.some((key) => {
+      const { editingId, editingDraft } = threadsById[Number(key)].localState || {};
+      return Boolean(editingId || editingDraft);
+    });
+    if (hasActiveEdit) continue;
+
+    const keepIds = new Set<number>();
+    const lastMessageId = selectChatLastMessageId(nextGlobal, chatId);
+    if (lastMessageId) keepIds.add(lastMessageId);
+    for (const key of threadKeys) {
+      for (const id of threadsById[Number(key)].localState?.lastViewportIds || []) {
+        keepIds.add(id);
+      }
+    }
+
+    // Nothing meaningful to reclaim
+    if (Object.keys(current.byId).length <= keepIds.size) continue;
+
+    const newById = pick(current.byId, Array.from(keepIds));
+
+    const newThreadsById = threadKeys.reduce((acc, key) => {
+      const thread = threadsById[Number(key)];
+      const window = (thread.localState?.lastViewportIds || []).filter((id) => newById[id]);
+      acc[Number(key)] = {
+        ...thread,
+        localState: {
+          ...thread.localState,
+          listedIds: window,
+          outlyingLists: undefined,
+        },
+      };
+      return acc;
+    }, {} as typeof threadsById);
+
+    nextGlobal = updateMessageStore(nextGlobal, chatId, {
+      byId: newById,
+      threadsById: newThreadsById,
+    });
+  }
+
+  return nextGlobal;
 }

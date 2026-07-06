@@ -86,6 +86,15 @@ export const MIN_PASSWORD_LENGTH = 1;
 export const MESSAGE_LIST_SLICE = isBigScreen ? 60 : 40;
 export const MESSAGE_LIST_VIEWPORT_LIMIT = MESSAGE_LIST_SLICE * 2;
 
+// Evicts the grow-only runtime message history of chats that are not open in
+// any tab, trimming each back to its last viewport window (the same shape the
+// app already runs with after a cache reload). `false` disables it entirely.
+export const MESSAGE_STORE_EVICTION_ENABLED = false;
+// How often the eviction sweep may run, and the minimum idle age a chat must
+// reach after being closed before its history is trimmed
+export const MESSAGE_STORE_EVICTION_INTERVAL = 60 * 1000; // 1 min
+export const MESSAGE_STORE_EVICTION_MIN_IDLE = 3 * 60 * 1000; // 3 min
+
 export const ARCHIVE_MINIMIZED_HEIGHT = 36;
 export const CHAT_HEIGHT_PX = 72;
 export const TOPIC_HEIGHT_PX = 65;

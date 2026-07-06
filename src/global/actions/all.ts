@@ -25,6 +25,7 @@ import './ui/initial';
 import './ui/chats';
 import './ui/bots';
 import './ui/messages';
+import './ui/messageStoreEviction';
 import './ui/globalSearch';
 import './ui/middleSearch';
 import './ui/stickerSearch';

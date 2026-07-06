@@ -1248,6 +1248,7 @@ export interface ActionPayloads {
     shouldReplaceLast?: boolean;
     noForumTopicPanel?: boolean;
   } & WithTabId;
+  trimMessageStore: undefined;
   openThread: {
     type?: MessageListType;
     shouldReplaceHistory?: boolean;
