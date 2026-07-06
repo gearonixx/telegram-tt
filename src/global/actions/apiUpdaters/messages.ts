@@ -68,6 +68,7 @@ import {
   updateQuickReplyMessage,
   updateScheduledMessage,
 } from '../../reducers';
+import { addTranscription } from '../../reducers/messageStore';
 import { addUnreadPollVotes } from '../../reducers/polls';
 import { addUnreadReactions, removeUnreadReactions } from '../../reducers/reactions';
 import { updateTabState } from '../../reducers/tabs';
@@ -1101,18 +1102,12 @@ addActionHandler('apiUpdate', (global, actions, update): ActionReturnType => {
     case 'updateTranscribedAudio': {
       const { transcriptionId, text, isPending } = update;
 
-      global = {
-        ...global,
-        transcriptions: {
-          ...global.transcriptions,
-          [transcriptionId]: {
-            ...(global.transcriptions[transcriptionId] || {}),
-            transcriptionId,
-            text,
-            isPending,
-          },
-        },
-      };
+      global = addTranscription(global, {
+        ...(global.transcriptions[transcriptionId] || {}),
+        transcriptionId,
+        text,
+        isPending,
+      });
       setGlobal(global);
       break;
     }

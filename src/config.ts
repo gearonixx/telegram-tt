@@ -66,6 +66,9 @@ export const MEDIA_PROGRESSIVE_CACHE_NAME = 'tt-media-progressive';
 export const MEDIA_CACHE_MAX_BYTES = 512 * 1024; // 512 KB
 // LRU byte budget for the in-memory media cache in `mediaLoader`; `0` disables eviction
 export const MEDIA_MEMORY_CACHE_MAX_BYTES = 32 * 1024 * 1024; // 32 MB
+// Cap for the session-lifetime `global.transcriptions` cache; `0` disables the cap.
+// Evicting a transcript is safe: the message keeps its `transcriptionId` and re-transcribes on demand
+export const TRANSCRIPTIONS_CACHE_LIMIT = 250;
 export const CUSTOM_BG_CACHE_NAME = 'tt-custom-bg';
 export const LANG_CACHE_NAME = 'tt-lang-packs-v52';
 export const ASSET_CACHE_NAME = 'tt-assets';
